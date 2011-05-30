@@ -12,7 +12,7 @@ import com.saplo.api.client.TransportRegistry.SessionFactory;
  * @author progre55
  *
  */
-public class HTTPSSession extends HTTPSession {
+public class HTTPSSession extends HTTPSessionApache {
 
 	public HTTPSSession(URI uri, String params, int count) {
 		super(uri, params, count);
