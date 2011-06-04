@@ -58,7 +58,7 @@ public class HTTPSessionApache implements Session {
 		HttpPost httpost = new HttpPost(uri+"?"+params);
 
 
-		ByteArrayEntity ent = new ByteArrayEntity(message.toString().getBytes());
+		ByteArrayEntity ent = new ByteArrayEntity(message.toString().getBytes(Charset.forName("UTF-8")));
 		ent.setContentEncoding(HTTP.UTF_8);
 		ent.setContentType("application/x-www-form-urlencoded");
 		httpost.setEntity(ent);
