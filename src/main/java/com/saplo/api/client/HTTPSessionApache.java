@@ -8,8 +8,8 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+//import org.apache.commons.logging.Log;
+//import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -36,7 +36,7 @@ import com.saplo.api.client.entity.JSONRPCResponseObject;
  */
 public class HTTPSessionApache implements Session {
 
-	private static Log logger = LogFactory.getLog(HTTPSessionApache.class);
+//	private static Log logger = LogFactory.getLog(HTTPSessionApache.class);
 	protected URI uri;
 	protected volatile String params;
 //	protected int clientsCount;
