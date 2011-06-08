@@ -1,9 +1,7 @@
 package com.saplo.api.client;
 
-import java.io.IOException;
 import java.io.Serializable;
 
-import org.apache.commons.httpclient.HttpException;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -15,6 +13,8 @@ import com.saplo.api.client.manager.SaploAuthManager;
 import com.saplo.api.client.util.ClientUtil;
 
 /**
+ * A Saplo-API client class.
+ * 
  * @author progre55
  */
 public class SaploClient implements Serializable {
@@ -53,7 +53,7 @@ public class SaploClient implements Serializable {
 	 * @throws SaploClientException 
 	 */
 	public SaploClient(String apiKey, String secretKey)
-	throws HttpException, IOException, JSONException, SaploClientException {
+	throws JSONException, SaploClientException {
 		this(apiKey, secretKey, DEFAULT_ENDPOINT);
 	}
 	
@@ -70,7 +70,7 @@ public class SaploClient implements Serializable {
 	 * @throws SaploClientException 
 	 */
 	public SaploClient(String apiKey, String secretKey, boolean ssl) 
-	throws HttpException, IOException, JSONException, SaploClientException {
+	throws JSONException, SaploClientException {
 		this(apiKey, secretKey, "", ssl ? DEFAULT_SSL_ENDPOINT : DEFAULT_ENDPOINT, ssl);
 	}
 
@@ -88,7 +88,7 @@ public class SaploClient implements Serializable {
 	 * @throws SaploClientException 
 	 */
 	public SaploClient(String apiKey, String secretKey, String endpoint)
-	throws HttpException, IOException, JSONException, SaploClientException {
+	throws JSONException, SaploClientException {
 		this(apiKey, secretKey, "", endpoint, false);
 	}
 
@@ -106,7 +106,7 @@ public class SaploClient implements Serializable {
 	 * @throws SaploClientException 
 	 */
 	public SaploClient(String apiKey, String secretKey, String endpoint, boolean ssl)
-	throws HttpException, IOException, JSONException, SaploClientException {
+	throws JSONException, SaploClientException {
 		this(apiKey, secretKey, "", endpoint, ssl);
 	}
 
@@ -125,7 +125,7 @@ public class SaploClient implements Serializable {
 	 * @throws SaploClientException 
 	 */
 	public SaploClient(String apiKey, String secretKey, String accessToken, String endpoint, boolean ssl)
-	throws HttpException, IOException, JSONException, SaploClientException {
+	throws JSONException, SaploClientException {
 		if(endpoint == null || !endpoint.startsWith("http"))
 			throw new ClientError("Invalid endpoint!");
 		if(ssl && !endpoint.startsWith("https://"))
