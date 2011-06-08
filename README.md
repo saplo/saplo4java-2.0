@@ -39,9 +39,11 @@ Quickstart
     	System.out.println("Category: \"" + tag.getCategory() + "\"" + "\tTag: \"" + tag.getTagWord() + "\"");
     }
     
-    
     // Shut down the client
     client.shutdown();
+        
+For the rest of the API methods and examples, refer to http://developer.saplo.com/
+    
     
 Building from source
 ------------------
