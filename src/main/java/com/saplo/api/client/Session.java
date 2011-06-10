@@ -23,7 +23,6 @@ public interface Session {
 	 * Set a params value to the session (usually the jsessionid 
 	 * or access_token param)
 	 */
-
 	void setParams(String params);
 
 	/**

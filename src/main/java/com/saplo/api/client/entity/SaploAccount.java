@@ -39,7 +39,7 @@ public class SaploAccount {
 	/**
 	 * @param id the id to set
 	 */
-	public void setId(int id) {
+	protected void setId(int id) {
 		this.id = id;
 	}
 
@@ -53,7 +53,7 @@ public class SaploAccount {
 	/**
 	 * @param expirationDate the expirationDate to set
 	 */
-	public void setExpirationDate(Date expirationDate) {
+	protected void setExpirationDate(Date expirationDate) {
 		this.expirationDate = expirationDate;
 	}
 
@@ -67,7 +67,7 @@ public class SaploAccount {
 	/**
 	 * @param apiCalls the apiCalls to set
 	 */
-	public void setApiCalls(ApiCalls apiCalls) {
+	protected void setApiCalls(ApiCalls apiCalls) {
 		this.apiCalls = apiCalls;
 	}
 
@@ -81,7 +81,7 @@ public class SaploAccount {
 	/**
 	 * @param collectionsLimit the collectionsLimit to set
 	 */
-	public void setCollectionsLimit(int collectionsLimit) {
+	protected void setCollectionsLimit(int collectionsLimit) {
 		this.collectionsLimit = collectionsLimit;
 	}
 
@@ -95,7 +95,7 @@ public class SaploAccount {
 	/**
 	 * @param collectionsLeft the collectionsLeft to set
 	 */
-	public void setCollectionsLeft(int collectionsLeft) {
+	protected void setCollectionsLeft(int collectionsLeft) {
 		this.collectionsLeft = collectionsLeft;
 	}
 
@@ -109,7 +109,7 @@ public class SaploAccount {
 	/**
 	 * @param groupLimit the groupLimit to set
 	 */
-	public void setGroupLimit(int groupLimit) {
+	protected void setGroupLimit(int groupLimit) {
 		this.groupLimit = groupLimit;
 	}
 
@@ -123,8 +123,23 @@ public class SaploAccount {
 	/**
 	 * @param groupLeft the groupLeft to set
 	 */
-	public void setGroupLeft(int groupLeft) {
+	protected void setGroupLeft(int groupLeft) {
 		this.groupLeft = groupLeft;
+	}	
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "SaploAccount ["
+				+ "id=" + id 
+				+ ", collectionsLeft=" + collectionsLeft
+				+ ", collectionsLimit=" + collectionsLimit
+				+ ", " + (expirationDate != null ? "expirationDate=" 
+						+ sf.format(expirationDate) + ", " : "") + "groupLeft=" + groupLeft
+				+ ", groupLimit=" + groupLimit 
+				+ ", " + (apiCalls != null ? "apiCalls={" + apiCalls.toString() + "}" : "apiCalls=null") + "]";
 	}
 
 	/**
@@ -158,13 +173,13 @@ public class SaploAccount {
 				apiCalls.setLimitHour(apiCallsJson.getInt("limit_hour"));
 			if(apiCallsJson.has("reset_hour"))
 				try {
-					apiCalls.setResetHour(sf.parse(json.getString("reset_hour")));
+					apiCalls.setResetHour(sf.parse(apiCallsJson.getString("reset_hour")));
 				} catch (ParseException e) {
 					//
 				}
 				if(apiCallsJson.has("reset_month"))
 					try {
-						apiCalls.setResetMonth(sf.parse(json.getString("reset_month")));
+						apiCalls.setResetMonth(sf.parse(apiCallsJson.getString("reset_month")));
 					} catch (ParseException e) {
 						//
 					}
@@ -228,7 +243,7 @@ public class SaploAccount {
 		/**
 		 * @param limitMonth the limitMonth to set
 		 */
-		public void setLimitMonth(int limitMonth) {
+		protected void setLimitMonth(int limitMonth) {
 			this.limitMonth = limitMonth;
 		}
 
@@ -242,7 +257,7 @@ public class SaploAccount {
 		/**
 		 * @param leftMonth the leftMonth to set
 		 */
-		public void setLeftMonth(int leftMonth) {
+		protected void setLeftMonth(int leftMonth) {
 			this.leftMonth = leftMonth;
 		}
 
@@ -256,7 +271,7 @@ public class SaploAccount {
 		/**
 		 * @param resetMonth the resetMonth to set
 		 */
-		public void setResetMonth(Date resetMonth) {
+		protected void setResetMonth(Date resetMonth) {
 			this.resetMonth = resetMonth;
 		}
 
@@ -270,7 +285,7 @@ public class SaploAccount {
 		/**
 		 * @param limitHour the limitHour to set
 		 */
-		public void setLimitHour(int limitHour) {
+		protected void setLimitHour(int limitHour) {
 			this.limitHour = limitHour;
 		}
 
@@ -284,7 +299,7 @@ public class SaploAccount {
 		/**
 		 * @param leftHour the leftHour to set
 		 */
-		public void setLeftHour(int leftHour) {
+		protected void setLeftHour(int leftHour) {
 			this.leftHour = leftHour;
 		}
 
@@ -298,8 +313,28 @@ public class SaploAccount {
 		/**
 		 * @param resetHour the resetHour to set
 		 */
-		public void setResetHour(Date resetHour) {
+		protected void setResetHour(Date resetHour) {
 			this.resetHour = resetHour;
 		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return "ApiCalls [leftHour="
+					+ leftHour
+					+ ", leftMonth="
+					+ leftMonth
+					+ ", limitHour="
+					+ limitHour
+					+ ", limitMonth="
+					+ limitMonth
+					+ ", "
+					+ (resetHour != null ? "resetHour=" + sf.format(resetHour) + ", " : "")
+					+ (resetMonth != null ? "resetMonth=" + sf.format(resetMonth) : "")
+					+ "]";
+		}
+		
 	}
 }

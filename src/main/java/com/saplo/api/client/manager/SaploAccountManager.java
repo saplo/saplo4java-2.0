@@ -24,10 +24,18 @@ public class SaploAccountManager {
 		this.client = clientToUse;
 	}
 	
+	/**
+	 * Get a SaploAccount object containing your account information, calls made/left, etc.
+	 * 
+	 * @return SaploAccount
+	 * 
+	 * @throws JSONException
+	 * @throws SaploClientException
+	 */
 	public SaploAccount get() throws JSONException, SaploClientException {
 		JSONObject params = new JSONObject();
 		
-		JSONRPCRequestObject message = new JSONRPCRequestObject(client.getNextId(), "auth.accessToken", params);
+		JSONRPCRequestObject message = new JSONRPCRequestObject(client.getNextId(), "account.get", params);
 		JSONRPCResponseObject responseMessage = client.sendAndReceive(message);
 		
 		JSONObject rawResult = (JSONObject)client.parseResponse(responseMessage);

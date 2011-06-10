@@ -39,17 +39,12 @@ public class HTTPSessionApache implements Session {
 //	private static Log logger = LogFactory.getLog(HTTPSessionApache.class);
 	protected URI uri;
 	protected volatile String params;
-//	protected int clientsCount;
-//	protected Stack<DefaultHttpClient> clientPool;
 	protected HttpHost proxy = new HttpHost("localhost");
 	protected boolean proxified = false;
 
 	public HTTPSessionApache(URI uri, String params, int count) {
 		this.uri = uri;
 		this.params = params;
-//		this.clientsCount = count;
-//		clientPool = new Stack<DefaultHttpClient>();
-//		fillPool();
 	}
 
 	public JSONRPCResponseObject sendAndReceive(JSONRPCRequestObject message)
@@ -60,10 +55,9 @@ public class HTTPSessionApache implements Session {
 
 		ByteArrayEntity ent = new ByteArrayEntity(message.toString().getBytes(Charset.forName("UTF-8")));
 		ent.setContentEncoding(HTTP.UTF_8);
-		ent.setContentType("application/x-www-form-urlencoded");
+		ent.setContentType("application/json");
 		httpost.setEntity(ent);
 				
-//		DefaultHttpClient httpClient = getClient();
 		DefaultHttpClient httpClient = new DefaultHttpClient();
 
 		try {
@@ -100,7 +94,6 @@ public class HTTPSessionApache implements Session {
 		} catch (IOException e) {
 			throw new ClientError(e);
 		} finally {
-//			releaseClient(httpClient);
 			httpClient.getConnectionManager().shutdown();
 		}
 	}
@@ -109,56 +102,21 @@ public class HTTPSessionApache implements Session {
 		this.params = params;
 	}
 	
+	/**
+	 * Set a proxy to use for this transport connections
+	 * 
+	 * @param address - proxy address
+	 * @param port - proxy port
+	 */
 	public void setProxy(String address, int port) {
 		this.proxified = true;
 		this.proxy = new HttpHost(address, port, "http");
 	}
 
-//	/**
-//	 * Get a client from the pool.
-//	 * 
-//	 * @return - HttpClient
-//	 */
-//	protected synchronized DefaultHttpClient getClient() {
-//		DefaultHttpClient cl = null;
-//		try {
-//			while (clientPool.empty())
-//				this.wait();
-//			logger.debug("Remaining clients: " + clientPool.size());
-//			cl = clientPool.pop();
-//		} catch (InterruptedException e) {
-//			e.printStackTrace();
-//		}
-//
-//		return cl;
-//	}
-//
-//	/**
-//	 * Put the client back into the pool.
-//	 * 
-//	 * @param client - the client to return into the pool
-//	 */
-//	public synchronized void releaseClient(DefaultHttpClient client) {
-//		clientPool.push(client);
-//		this.notify();
-//	}
-//
-//	private void fillPool() {
-//		for (int i = 0; i < clientsCount; i++) {
-//			DefaultHttpClient cl = new DefaultHttpClient();
-//			clientPool.push(cl);
-//		}
-//	}
-
 	/**
 	 * Close all the clients and clear the pool.
 	 */
 	public synchronized void close() {
-//		for (int i = 0; i < clientsCount; i++) {
-//			DefaultHttpClient cl = clientPool.pop();
-//			cl.getConnectionManager().shutdown();
-//		}
-//		clientPool.clear();
 	}
 
 	static class SessionFactoryImpl implements SessionFactory {
