@@ -8,8 +8,6 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 
-//import org.apache.commons.logging.Log;
-//import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -42,7 +40,7 @@ public class HTTPSessionApache implements Session {
 	protected HttpHost proxy = new HttpHost("localhost");
 	protected boolean proxified = false;
 
-	public HTTPSessionApache(URI uri, String params, int count) {
+	public HTTPSessionApache(URI uri, String params) {
 		this.uri = uri;
 		this.params = params;
 	}
@@ -51,7 +49,6 @@ public class HTTPSessionApache implements Session {
 	throws JSONException, SaploClientException {
 
 		HttpPost httpost = new HttpPost(uri+"?"+params);
-
 
 		ByteArrayEntity ent = new ByteArrayEntity(message.toString().getBytes(Charset.forName("UTF-8")));
 		ent.setContentEncoding(HTTP.UTF_8);
@@ -102,12 +99,6 @@ public class HTTPSessionApache implements Session {
 		this.params = params;
 	}
 	
-	/**
-	 * Set a proxy to use for this transport connections
-	 * 
-	 * @param address - proxy address
-	 * @param port - proxy port
-	 */
 	public void setProxy(String address, int port) {
 		this.proxified = true;
 		this.proxy = new HttpHost(address, port, "http");
@@ -122,13 +113,13 @@ public class HTTPSessionApache implements Session {
 	static class SessionFactoryImpl implements SessionFactory {
 		volatile HashMap<URI, Session> sessionMap = new HashMap<URI, Session>();
 
-		public Session newSession(URI uri, String params, int count) {
+		public Session newSession(URI uri, String params) {
 			Session session = sessionMap.get(uri);
 			if (session == null) {
 				synchronized (sessionMap) {
 					session = sessionMap.get(uri);
 					if(session == null) {
-						session = new HTTPSessionApache(uri, params, count);
+						session = new HTTPSessionApache(uri, params);
 						sessionMap.put(uri, session);
 					}
 				}

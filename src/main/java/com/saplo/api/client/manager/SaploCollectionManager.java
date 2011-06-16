@@ -65,7 +65,8 @@ public class SaploCollectionManager {
 		JSONObject params = new JSONObject();
 		params.put("name", saploCollection.getName());
 		params.put("language", saploCollection.getLanguage().toString());
-		params.put("description", saploCollection.getDescription());
+		if(!ClientUtil.NULL_STRING.equals(saploCollection.getDescription()))
+			params.put("description", saploCollection.getDescription());
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "collection.create", params);
 

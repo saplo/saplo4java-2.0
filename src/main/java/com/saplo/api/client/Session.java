@@ -26,6 +26,14 @@ public interface Session {
 	void setParams(String params);
 
 	/**
+	 * Set a proxy to use for this transport connections
+	 * 
+	 * @param address - proxy address
+	 * @param port - proxy port
+	 */
+	void setProxy(String address, int port);
+	
+	/**
 	 * Close the session and release the resources if neccessary
 	 */
 	void close();

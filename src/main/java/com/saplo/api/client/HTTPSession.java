@@ -55,6 +55,10 @@ public class HTTPSession implements Session {
 	public void setState(HttpState state) {
 		this.state = state;
 	}
+	
+	public void setProxy(String address, int port) {
+		// empty for now..
+	}
 
 	public JSONRPCResponseObject sendAndReceive(JSONRPCRequestObject message) throws JSONException, SaploClientException {
 //		if (log.isDebugEnabled())
@@ -151,6 +155,10 @@ public class HTTPSession implements Session {
 	static class SessionFactoryImpl implements SessionFactory {
 		volatile HashMap<URI, Session> sessionMap = new HashMap<URI, Session>();
 
+		public Session newSession(URI uri, String params) {
+			return newSession(uri, params, 1);
+		}
+		
 		public Session newSession(URI uri, String params, int count) {
 			Session session = sessionMap.get(uri);
 			if (session == null) {

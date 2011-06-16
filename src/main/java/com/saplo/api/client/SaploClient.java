@@ -141,11 +141,21 @@ public class SaploClient implements Serializable {
 		createSession(accessToken);
 	}
 
+	/**
+	 * Set a proxy address for the client to commumicate with the API
+	 * TODO set it before authing
+	 * @param address
+	 * @param port
+	 */
+	public void setProxy(String address, int port) {
+		session.setProxy(address, port);
+	}
+	
 	/*
 	 * Get authenticated and store the accessToken in the session
 	 */
 	protected synchronized void createSession(String accToken) throws SaploClientException {
-		session = TransportRegistry.getTransportRegistryInstance().createSession(endpoint, "access_token=" + accToken, 5);
+		session = TransportRegistry.getTransportRegistryInstance().createSession(endpoint, "access_token=" + accToken);
 
 		if(accToken != null && accToken.length() > 0) {
 			this.accessToken = accToken;
@@ -154,43 +164,46 @@ public class SaploClient implements Serializable {
 		authenticateSession();
 	}
 
-	protected synchronized boolean reCreateSession() throws SaploClientException {
-		long now = System.currentTimeMillis();
-		if((now - lastReconnectAttempt) < reconnectTimeout * maxReconnectCount || reconnectCount > maxReconnectCount)
-			return false;
+	protected boolean reCreateSession() throws SaploClientException {
 		
-		// if have successfully reconnected during the last 10 seconds, return true
-		if((now - lastSuccessfulReconnect) < 10000 && reconnectCount == 0)
-			return true;
-
-		logger.info("Trying to reconnect to the API..");
-		while(reconnectCount <= maxReconnectCount) {
-
-			try {
-				// wait a bit before attempting to reconnect
-				long toSleep = (reconnectCount + 1) * reconnectTimeout;
-
-				this.wait(toSleep);
-				
-				authenticateSession();
-				
-				// if haven't got an exception so far, then assume connected
-				reconnectCount = 0;
-				lastReconnectAttempt = System.currentTimeMillis();
-				lastSuccessfulReconnect = System.currentTimeMillis();
-				logger.info("Successfully reconnected to the API..");
-				
-				return true;
-			} catch (SaploClientException e) {
-				reconnectCount++;
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+		synchronized (this) {
+			long now = System.currentTimeMillis();
+			if((now - lastReconnectAttempt) < reconnectTimeout * maxReconnectCount || reconnectCount > maxReconnectCount)
 				return false;
+			
+			// if have successfully reconnected during the last 10 seconds, return true
+			if((now - lastSuccessfulReconnect) < 10000 && reconnectCount == 0)
+				return true;
+
+			logger.info("Trying to reconnect to the API..");
+			while(reconnectCount <= maxReconnectCount) {
+
+				try {
+					// wait a bit before attempting to reconnect
+					long toSleep = (reconnectCount + 1) * reconnectTimeout;
+
+					this.wait(toSleep);
+					
+					authenticateSession();
+					
+					// if haven't got an exception so far, then assume connected
+					reconnectCount = 0;
+					lastReconnectAttempt = System.currentTimeMillis();
+					lastSuccessfulReconnect = System.currentTimeMillis();
+					logger.info("Successfully reconnected to the API..");
+					
+					return true;
+				} catch (SaploClientException e) {
+					reconnectCount++;
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+					return false;
+				}
 			}
+			lastReconnectAttempt = System.currentTimeMillis();
+			logger.warn("Could not reconnect to the API after " + reconnectCount + " attempts .");
+			throw new SaploClientException(ResponseCodes.MSG_ERR_NOSESSION, ResponseCodes.CODE_ERR_NOSESSION);
 		}
-		lastReconnectAttempt = System.currentTimeMillis();
-		logger.warn("Could not reconnect to the API after " + reconnectCount + " attempts .");
-		throw new SaploClientException(ResponseCodes.MSG_ERR_NOSESSION, ResponseCodes.CODE_ERR_NOSESSION);
 	}
 
 	protected void authenticateSession() throws SaploClientException {

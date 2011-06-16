@@ -14,20 +14,20 @@ import com.saplo.api.client.TransportRegistry.SessionFactory;
  */
 public class HTTPSSession extends HTTPSessionApache {
 
-	public HTTPSSession(URI uri, String params, int count) {
-		super(uri, params, count);
+	public HTTPSSession(URI uri, String params) {
+		super(uri, params);
 	}
 	
 	static class SessionFactoryImpl implements SessionFactory {
 		volatile HashMap<URI, Session> sessionMap = new HashMap<URI, Session>();
-
-		public Session newSession(URI uri, String params, int count) {
+		
+		public Session newSession(URI uri, String params) {
 			Session session = sessionMap.get(uri);
 			if (session == null) {
 				synchronized (sessionMap) {
 					session = sessionMap.get(uri);
 					if(session == null) {
-						session = new HTTPSSession(uri, params, count);
+						session = new HTTPSSession(uri, params);
 						sessionMap.put(uri, session);
 					}
 				}
