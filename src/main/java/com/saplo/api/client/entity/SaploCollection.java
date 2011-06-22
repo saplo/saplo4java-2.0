@@ -36,6 +36,15 @@ public class SaploCollection {
 	}
 	
 	/**
+	 * A constructor with the collection Id
+	 * 
+	 * @param id
+	 */
+	public SaploCollection(int id) {
+		this.id = id;
+	}
+	
+	/**
 	 * A constructor with required parameters
 	 * 
 	 * @param collectionName
