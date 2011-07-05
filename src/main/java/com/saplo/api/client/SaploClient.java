@@ -1,7 +1,13 @@
 package com.saplo.api.client;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.http.HttpException;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -39,6 +45,9 @@ public class SaploClient implements Serializable {
 	protected long reconnectTimeout = 3 * 1000; // 3 seconds
 	protected long reconnectCount = 0;
 	protected long maxReconnectCount = 10;
+	
+	protected final Lock lock;
+	protected final Condition sleeping;
 	
 	/**
 	 * A constructor that uses a default endpoint - {@value SaploClient#DEFAULT_ENDPOINT}
@@ -139,6 +148,8 @@ public class SaploClient implements Serializable {
 		this.endpoint = endpoint;
 		this.setupServerEnvironment();
 		createSession(accessToken);
+		lock = new ReentrantLock();
+		sleeping = lock.newCondition();
 	}
 
 	/**
@@ -164,9 +175,10 @@ public class SaploClient implements Serializable {
 		authenticateSession();
 	}
 
-	protected boolean reCreateSession() throws SaploClientException {
+	protected synchronized boolean reCreateSession() throws SaploClientException {
 		
-		synchronized (this) {
+		lock.lock();
+		try  {
 			long now = System.currentTimeMillis();
 			if((now - lastReconnectAttempt) < reconnectTimeout * maxReconnectCount || reconnectCount > maxReconnectCount)
 				return false;
@@ -182,13 +194,13 @@ public class SaploClient implements Serializable {
 					// wait a bit before attempting to reconnect
 					long toSleep = (reconnectCount + 1) * reconnectTimeout;
 
-					this.wait(toSleep);
+					sleeping.await(toSleep, TimeUnit.MILLISECONDS);
 					
 					authenticateSession();
 					
 					// if haven't got an exception so far, then assume connected
 					reconnectCount = 0;
-					lastReconnectAttempt = System.currentTimeMillis();
+					lastReconnectAttempt = 0;
 					lastSuccessfulReconnect = System.currentTimeMillis();
 					logger.info("Successfully reconnected to the API..");
 					
@@ -203,6 +215,8 @@ public class SaploClient implements Serializable {
 			lastReconnectAttempt = System.currentTimeMillis();
 			logger.warn("Could not reconnect to the API after " + reconnectCount + " attempts .");
 			throw new SaploClientException(ResponseCodes.MSG_ERR_NOSESSION, ResponseCodes.CODE_ERR_NOSESSION);
+		} finally {
+			lock.unlock();
 		}
 	}
 
@@ -219,6 +233,9 @@ public class SaploClient implements Serializable {
 		session.setParams("access_token=" + accessToken);
 	}
 	
+	public long getLastSuccessfulReconnect() {
+		return lastSuccessfulReconnect;
+	}
 	
 	/**
 	 * Get the next incremental JSON-RPC id
