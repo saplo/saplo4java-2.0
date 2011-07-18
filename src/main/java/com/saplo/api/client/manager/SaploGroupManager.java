@@ -23,7 +23,6 @@ import com.saplo.api.client.entity.SaploCollection;
 import com.saplo.api.client.entity.SaploFuture;
 import com.saplo.api.client.entity.SaploGroup;
 import com.saplo.api.client.entity.SaploText;
-import com.saplo.api.client.entity.SaploText.RelatedBy;
 import com.saplo.api.client.util.ClientUtil;
 
 /**
@@ -318,7 +317,9 @@ public class SaploGroupManager {
 
 		JSONRPCResponseObject response = client.sendAndReceive(request);
 
-		return (Boolean)client.parseResponse(response);
+		JSONObject result = (JSONObject)client.parseResponse(response);
+		
+		return result.getBoolean("success");
 	}
 
 	/**
@@ -403,10 +404,6 @@ public class SaploGroupManager {
 	 * Then the related group list can be retrieved by {@link SaploGroup#getRelatedGroups()}
 	 * 
 	 * @param saploGroup - the {@link SaploGroup} object to search related groups against
-	 * @param relatedBy - How the groups should be related.
-	 * {@link RelatedBy#automatic} - let the engine to choose the best approach.
-	 * {@link RelatedBy#semantic} - search for texts based on the same semantic meaning.
-	 * {@link RelatedBy#statistic} - search for texts based on statistical relations.
 	 * @param groupScope - the {@link SaploGroup}s the given group should be compared to.
 	 * By default, all the user groups are searched.
 	 * @param wait - maximum time to wait for the result to be calculated.
@@ -414,7 +411,7 @@ public class SaploGroupManager {
 	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public void relatedGroups(SaploGroup saploGroup, RelatedBy relatedBy, SaploGroup[] groupScope, int wait) 
+	public void relatedGroups(SaploGroup saploGroup, SaploGroup[] groupScope, int wait) 
 	throws JSONException, SaploClientException {
 		if(saploGroup.getId() < 1)
 			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
@@ -424,8 +421,6 @@ public class SaploGroupManager {
 
 		JSONObject params = new JSONObject();
 		params.put("group_id", saploGroup.getId());
-		if(relatedBy != null)
-			params.put("related_by", relatedBy);
 		if(groupScope != null && groupScope.length > 0) {
 			int groupIds[] = new int[groupScope.length];
 			for(int i = 0; i < groupScope.length; i++) {
@@ -486,21 +481,17 @@ public class SaploGroupManager {
 	 * </pre>
 	 * 
 	 * @param saploGroup - the {@link SaploGroup} object to search related groups against
-	 * @param relatedBy - How the groups should be related.
-	 * {@link RelatedBy#automatic} - let the engine to choose the best approach.
-	 * {@link RelatedBy#semantic} - search for texts based on the same semantic meaning.
-	 * {@link RelatedBy#statistic} - search for texts based on statistical relations.
 	 * @param groupScope - the {@link SaploGroup}s the given group should be compared to.
 	 * By default, all the user groups are searched.
 	 * @param wait - maximum time to wait for the result to be calculated.
 	 * @return SaploFuture<relatedGroupsList> - a {@link List} containing related groups to the given group
 	 * @throws SaploClientException
 	 */
-	public SaploFuture<Boolean> relatedGroupsAsync(final SaploGroup saploGroup, final RelatedBy relatedBy, final SaploGroup[] groupScope, final int wait) {
+	public SaploFuture<Boolean> relatedGroupsAsync(final SaploGroup saploGroup, final SaploGroup[] groupScope, final int wait) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
 				try {
-					relatedGroups(saploGroup, relatedBy, groupScope, wait);
+					relatedGroups(saploGroup, groupScope, wait);
 				} catch (JSONException e) {
 					return false;
 				}
@@ -514,12 +505,12 @@ public class SaploGroupManager {
 	 * Then, the related text list can be retrieved by {@link SaploGroup#getRelatedTexts()}
 	 * 
 	 * @param saploGroup - the {@link SaploGroup} object to search related texts against
-	 * @param collectionScope - Search the given collections to find related texts.
+	 * @param collection - Search the given collections to find related texts.
 	 * @param wait - maximum time to wait for the result to be calculated.
 	 * @param limit - the maximum number of related texts in the result. 
 	 * @throws SaploClientException 
 	 */
-	public void relatedTexts(SaploGroup saploGroup, SaploCollection[] collectionScope, int wait, int limit) throws JSONException, SaploClientException {
+	public void relatedTexts(SaploGroup saploGroup, SaploCollection collection, int wait, int limit) throws JSONException, SaploClientException {
 		if(saploGroup.getId() < 1)
 			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
 					ResponseCodes.CODE_CLIENT_FIELD, "group.id");
@@ -528,12 +519,8 @@ public class SaploGroupManager {
 
 		JSONObject params = new JSONObject();
 		params.put("group_id", saploGroup.getId());
-		if(collectionScope != null && collectionScope.length > 0) {
-			int collectionIds[] = new int[collectionScope.length];
-			for(int i = 0; i < collectionScope.length; i++) {
-				collectionIds[i] = collectionScope[i].getId();
-			}
-			params.put("collection_scope", collectionIds);
+		if(collection != null) {
+			params.put("collection_scope", collection.getId());
 		} else {
 			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
 					ResponseCodes.CODE_CLIENT_FIELD, "collection_scope");
@@ -566,17 +553,17 @@ public class SaploGroupManager {
 	 * Then, the related text list can be retrieved by {@link SaploGroup#getRelatedTexts()}
 	 * 
 	 * @param saploGroup - the {@link SaploGroup} object to search related texts against
-	 * @param collectionScope - Search the given collections to find related texts.
+	 * @param collection - Search the given collections to find related texts.
 	 * @param wait - maximum time to wait for the result to be calculated.
 	 * @param limit - the maximum number of related texts in the result. 
 	 * @return SaploFuture<relatedTextsList> - a {@link List} containing related texts to the given group
 	 * @throws SaploClientException
 	 */
-	public SaploFuture<Boolean> relatedTextsAsync(final SaploGroup saploGroup, final SaploCollection[] collectionScope, final int wait, final int limit) {
+	public SaploFuture<Boolean> relatedTextsAsync(final SaploGroup saploGroup, final SaploCollection collection, final int wait, final int limit) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
 				try {
-					relatedTexts(saploGroup, collectionScope, wait, limit);
+					relatedTexts(saploGroup, collection, wait, limit);
 				} catch (JSONException e) {
 					return false;
 				}
