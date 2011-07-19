@@ -141,7 +141,8 @@ public class SaploGroupManager {
 	 */
 	public void update(SaploGroup saploGroup) throws JSONException, SaploClientException {
 		if(saploGroup.getId() < 1)
-			throw new ClientError("Missing required parameters: group.group_id");
+			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
+					ResponseCodes.CODE_CLIENT_FIELD, "group.id");
 
 		JSONObject params = new JSONObject();
 		params.put("group_id", saploGroup.getId());
@@ -176,6 +177,99 @@ public class SaploGroupManager {
 					return false;
 				}
 				return true;
+			}
+		}));
+	}
+
+	/**
+	 * Reset the given group.
+	 * WARNING: This will remove all texts linked to that group and remove all results for the group
+	 * 
+	 * @param saploGroup - the group to reset
+	 * @throws JSONException
+	 * @throws SaploClientException
+	 */
+	public void reset(SaploGroup saploGroup) throws JSONException, SaploClientException {
+		if(saploGroup.getId() < 1)
+			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
+					ResponseCodes.CODE_CLIENT_FIELD, "group.id");
+
+		JSONObject params = new JSONObject();
+		params.put("group_id", saploGroup.getId());
+
+		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "group.reset", params);
+
+		JSONRPCResponseObject response = client.sendAndReceive(request);
+
+		JSONObject jsonGroup = (JSONObject)client.parseResponse(response);
+
+		SaploGroup.convertFromJSONToGroup(jsonGroup, saploGroup);
+
+	}
+
+	/**
+	 * Asynchronously reset a group.
+	 * For an example usage on async, see {@link #createAsync(SaploGroup)}
+	 * 
+	 * @param saploGroup - the {@link SaploGroup} to reset
+	 * @throws SaploClientException
+	 */
+	public SaploFuture<Boolean> resetAsync(final SaploGroup saploGroup) {
+		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
+			public Boolean call() throws SaploClientException {
+				try {
+					reset(saploGroup);
+				} catch (JSONException e) {
+					return false;
+				}
+				return true;
+			}
+		}));
+	}
+
+	/**
+	 * Delete a given group
+	 * WARNING: This will remove the group and all its associated results.
+	 * 
+	 * @param saploGroup - the group to delete
+	 * @return success/fail
+	 * 
+	 * @throws JSONException
+	 * @throws SaploClientException
+	 */
+	public boolean delete(SaploGroup saploGroup) throws JSONException, SaploClientException {
+		if(saploGroup.getId() < 1)
+			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
+					ResponseCodes.CODE_CLIENT_FIELD, "group.id");
+
+		JSONObject params = new JSONObject();
+		params.put("group_id", saploGroup.getId());
+
+		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "group.delete", params);
+
+		JSONRPCResponseObject response = client.sendAndReceive(request);
+
+		JSONObject result = (JSONObject)client.parseResponse(response);
+
+		return result.getBoolean("success");
+	}
+
+	/**
+	 * Asynchronously delete a group.
+	 * For an example usage on async, see {@link #createAsync(SaploGroup)}
+	 * 
+	 * @param saploGroup - the {@link SaploGroup} to delete
+	 * @return success/fail
+	 * @throws SaploClientException
+	 */	
+	public SaploFuture<Boolean> deleteAsync(final SaploGroup saploGroup) {
+		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
+			public Boolean call() throws SaploClientException {
+				try {
+					return delete(saploGroup);
+				} catch (JSONException e) {
+					return false;
+				}
 			}
 		}));
 	}
@@ -318,7 +412,7 @@ public class SaploGroupManager {
 		JSONRPCResponseObject response = client.sendAndReceive(request);
 
 		JSONObject result = (JSONObject)client.parseResponse(response);
-		
+
 		return result.getBoolean("success");
 	}
 
