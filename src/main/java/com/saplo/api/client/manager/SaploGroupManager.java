@@ -13,7 +13,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.saplo.api.client.ClientError;
 import com.saplo.api.client.ResponseCodes;
 import com.saplo.api.client.SaploClient;
 import com.saplo.api.client.SaploClientException;
@@ -337,7 +336,8 @@ public class SaploGroupManager {
 		List<SaploText> textList = new ArrayList<SaploText>();
 
 		if(saploGroup.getId() < 1)
-			throw new ClientError("Missing required parameters: group.group_id");
+			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
+					ResponseCodes.CODE_CLIENT_FIELD, "group.id");
 
 		JSONObject params = new JSONObject();
 		params.put("group_id", saploGroup.getId());
