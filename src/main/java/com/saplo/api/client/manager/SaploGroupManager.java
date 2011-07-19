@@ -643,6 +643,28 @@ public class SaploGroupManager {
 	}
 
 	/**
+	 * Search for texts that are related to the given groups.
+	 * Then, the related text list can be retrieved by {@link SaploGroup#getRelatedTexts()}
+	 * NOTE: For now, only the first group in the array is used. 
+	 * Use {@link #relatedTexts(SaploGroup, SaploCollection, int, int)} instead.
+	 * 
+	 * @param saploGroup - the {@link SaploGroup} object to search related texts against
+	 * @param collectionScope - Search the given collections to find related texts.
+	 * @param wait - maximum time to wait for the result to be calculated.
+	 * @param limit - the maximum number of related texts in the result. 
+	 * @throws SaploClientException 
+	 */
+	public void relatedTexts(SaploGroup saploGroup, SaploCollection[] collectionScope, int wait, int limit) 
+	throws JSONException, SaploClientException {
+		if(collectionScope.length > 0) {
+			relatedTexts(saploGroup, collectionScope[0], wait, limit);
+		} else {
+			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
+					ResponseCodes.CODE_CLIENT_FIELD, "collection_scope");
+		}
+	}
+	
+	/**
 	 * Asynchronously search for texts that are related to the given group.
 	 * Then, the related text list can be retrieved by {@link SaploGroup#getRelatedTexts()}
 	 * 
