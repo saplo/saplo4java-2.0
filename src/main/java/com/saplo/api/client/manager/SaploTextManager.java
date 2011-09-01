@@ -364,9 +364,15 @@ public class SaploTextManager {
 	 * @throws JSONException
 	 * @throws SaploClientException
 	 */
-	public boolean delete(int textId) throws JSONException, SaploClientException {
+	public boolean delete(int collectionId, int textId) throws JSONException, SaploClientException {
+		
+		SaploCollection collection = new SaploCollection();
+		collection.setId(collectionId);
+		
 		SaploText text = new SaploText();
 		text.setId(textId);
+		text.setCollection(collection);
+		
 		
 		return delete(text);
 	}
