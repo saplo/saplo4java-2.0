@@ -331,8 +331,11 @@ public class SaploTextManager {
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "text.delete", params);
 
 		JSONRPCResponseObject response = client.sendAndReceive(request);
-
-		return (Boolean)client.parseResponse(response);
+		
+		JSONObject result = (JSONObject)client.parseResponse(response);
+		
+		return result.getBoolean("success");
+		
 	}
 
 	/**
