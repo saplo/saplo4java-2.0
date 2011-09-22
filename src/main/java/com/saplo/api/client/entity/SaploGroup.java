@@ -20,7 +20,7 @@ import com.saplo.api.client.util.ClientUtil;
  */
 public class SaploGroup {
 
-	private static SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss");
+	private static SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
 	private int id = ClientUtil.NULL_INT;
 	private String name = ClientUtil.NULL_STRING; // required

@@ -39,7 +39,7 @@ public class SaploTextManager {
 	private SaploClient client;
 	private ExecutorService es;
 	private static final int thread_count = 5;
-	private SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");;
+	private SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");;
 
 	/**
 	 * A simple constructor 

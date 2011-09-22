@@ -17,7 +17,7 @@ import org.json.JSONObject;
  */
 public class SaploAccount {
 	
-	private static SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss");
+	private static SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 	private int id;
 	private Date expirationDate;
 	private ApiCalls apiCalls;

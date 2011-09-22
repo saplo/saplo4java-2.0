@@ -34,7 +34,7 @@ public class SaploText {
 		semantic, statistic, automatic
 	}
 	
-	private static SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss");
+	private static SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 	public static final int MAX_HEADLINE_LENGTH = 250;
 	public static final int MAX_LEAD_LENGTH = 250;
 	public static final int MAX_BODY_LENGTH = 100000;
@@ -188,11 +188,11 @@ public class SaploText {
 	}
 
 	/**
-	 * @param publishDate - string publish date formatted "yyyy-MM-dd hh:mm:ss" 
+	 * @param publishDate - string publish date formatted "yyyy-MM-dd HH:mm:ss" 
 	 */
 	public void setPublishDate(String publishDate) {
 		try {
-			SimpleDateFormat simple = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+			SimpleDateFormat simple = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 			this.publishDate = simple.parse(publishDate);
 		} catch (ParseException e) {
 			// do nothing
