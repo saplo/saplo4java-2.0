@@ -52,7 +52,7 @@ public class TransportRegistry {
 		registry.remove(scheme);
 	}
 
-	public Session createSession(String uriString, String params) {
+	public Session createSession(String uriString, String params, ClientProxy proxy) {
 		try {
 			URI uri = new URI(uriString);
 			SessionFactory found = registry.get(uri.getScheme());
@@ -60,7 +60,7 @@ public class TransportRegistry {
 				throw new ClientError("Could not open URI '" + uriString
 						+ "'. Unknown scheme - '" + uri.getScheme() + "'." +
 				"Make sure you have registered your SessionFactory with this transport.");
-			return found.newSession(uri, params);
+			return found.newSession(uri, params, proxy);
 		} catch (URISyntaxException e) {
 			throw new ClientError(e);
 		}
@@ -71,7 +71,7 @@ public class TransportRegistry {
 		 * @param uri - URI used to open this session
 		 * @param params - jsessionid or access_token param
 		 */
-		Session newSession(URI uri, String params);
+		Session newSession(URI uri, String params, ClientProxy proxy);
 	}
 
 }

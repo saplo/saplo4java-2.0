@@ -17,17 +17,25 @@ public class HTTPSSession extends HTTPSessionApache {
 	public HTTPSSession(URI uri, String params) {
 		super(uri, params);
 	}
+
+	public HTTPSSession(URI uri, String params, ClientProxy proxy) {
+		super(uri, params, proxy);
+	}
+
 	
 	static class SessionFactoryImpl implements SessionFactory {
 		volatile HashMap<URI, Session> sessionMap = new HashMap<URI, Session>();
 		
-		public Session newSession(URI uri, String params) {
+		public Session newSession(URI uri, String params, ClientProxy proxy) {
 			Session session = sessionMap.get(uri);
 			if (session == null) {
 				synchronized (sessionMap) {
 					session = sessionMap.get(uri);
 					if(session == null) {
-						session = new HTTPSSession(uri, params);
+						if(proxy != null)
+							session = new HTTPSSession(uri, params, proxy);
+						else
+							session = new HTTPSSession(uri, params);
 						sessionMap.put(uri, session);
 					}
 				}

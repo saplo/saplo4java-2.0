@@ -13,6 +13,8 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.NoHttpResponseException;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.params.ConnRoutePNames;
@@ -38,11 +40,18 @@ public class HTTPSessionApache implements Session {
 	protected URI uri;
 	protected volatile String params;
 	protected HttpHost proxy = new HttpHost("localhost");
-	protected boolean proxified = false;
+	protected ClientProxy clientProxy = null;
+	protected UsernamePasswordCredentials proxyCredentials = null;
+	protected AuthScope proxyScope = null;
 
 	public HTTPSessionApache(URI uri, String params) {
 		this.uri = uri;
 		this.params = params;
+	}
+	
+	public HTTPSessionApache(URI uri, String params, ClientProxy clientProxy) {
+		this(uri, params);
+		this.setProxy(clientProxy);
 	}
 
 	public JSONRPCResponseObject sendAndReceive(JSONRPCRequestObject message)
@@ -58,8 +67,12 @@ public class HTTPSessionApache implements Session {
 		DefaultHttpClient httpClient = new DefaultHttpClient();
 
 		try {
-			if(proxified)
+			if(clientProxy != null) {
+				if(clientProxy.isSecure())
+					httpClient.getCredentialsProvider().setCredentials(proxyScope, proxyCredentials);
+				
 				httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
+			}
 			
 			HttpResponse response = httpClient.execute(httpost);
 			HttpEntity entity = response.getEntity();
@@ -98,12 +111,21 @@ public class HTTPSessionApache implements Session {
 	public void setParams(String params) {
 		this.params = params;
 	}
-	
-	public void setProxy(String address, int port) {
-		this.proxified = true;
-		this.proxy = new HttpHost(address, port, "http");
-	}
 
+	/**
+	 * Set a proxy of type ClientProxy to use for this transport connections
+	 * 
+	 * @param proxy
+	 */
+	public void setProxy(ClientProxy clientProxy) {
+		this.clientProxy = clientProxy;
+		if(clientProxy.isSecure()) {
+			this.proxyScope = new AuthScope(clientProxy.getHost(), clientProxy.getPort());
+			this.proxyCredentials = new UsernamePasswordCredentials(
+					clientProxy.getUsername(), clientProxy.getPassword());
+		}
+	}
+	
 	/**
 	 * Close all the clients and clear the pool.
 	 */
@@ -113,13 +135,16 @@ public class HTTPSessionApache implements Session {
 	static class SessionFactoryImpl implements SessionFactory {
 		volatile HashMap<URI, Session> sessionMap = new HashMap<URI, Session>();
 
-		public Session newSession(URI uri, String params) {
+		public Session newSession(URI uri, String params, ClientProxy proxy) {
 			Session session = sessionMap.get(uri);
 			if (session == null) {
 				synchronized (sessionMap) {
 					session = sessionMap.get(uri);
 					if(session == null) {
-						session = new HTTPSessionApache(uri, params);
+						if(proxy != null)
+							session = new HTTPSessionApache(uri, params, proxy);
+						else
+							session = new HTTPSessionApache(uri, params);
 						sessionMap.put(uri, session);
 					}
 				}

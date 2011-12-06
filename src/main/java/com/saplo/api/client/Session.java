@@ -28,11 +28,10 @@ public interface Session {
 	/**
 	 * Set a proxy to use for this transport connections
 	 * 
-	 * @param address - proxy address
-	 * @param port - proxy port
+	 * @param proxy
 	 */
-	void setProxy(String address, int port);
-	
+	void setProxy(ClientProxy proxy);
+		
 	/**
 	 * Close the session and release the resources if neccessary
 	 */
