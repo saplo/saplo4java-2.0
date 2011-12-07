@@ -16,9 +16,11 @@ import org.apache.http.NoHttpResponseException;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
@@ -41,8 +43,7 @@ public class HTTPSessionApache implements Session {
 	protected volatile String params;
 	protected HttpHost proxy = new HttpHost("localhost");
 	protected ClientProxy clientProxy = null;
-	protected UsernamePasswordCredentials proxyCredentials = null;
-	protected AuthScope proxyScope = null;
+	protected CredentialsProvider proxyCredentials = null;
 
 	public HTTPSessionApache(URI uri, String params) {
 		this.uri = uri;
@@ -68,8 +69,9 @@ public class HTTPSessionApache implements Session {
 
 		try {
 			if(clientProxy != null) {
-				if(clientProxy.isSecure())
-					httpClient.getCredentialsProvider().setCredentials(proxyScope, proxyCredentials);
+				if(clientProxy.isSecure()) {
+					httpClient.setCredentialsProvider(proxyCredentials);
+				}
 				
 				httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
 			}
@@ -119,10 +121,12 @@ public class HTTPSessionApache implements Session {
 	 */
 	public void setProxy(ClientProxy clientProxy) {
 		this.clientProxy = clientProxy;
+		this.proxy = new HttpHost(clientProxy.getHost(), clientProxy.getPort());
 		if(clientProxy.isSecure()) {
-			this.proxyScope = new AuthScope(clientProxy.getHost(), clientProxy.getPort());
-			this.proxyCredentials = new UsernamePasswordCredentials(
-					clientProxy.getUsername(), clientProxy.getPassword());
+			this.proxyCredentials = new BasicCredentialsProvider();
+			this.proxyCredentials.setCredentials(
+					new AuthScope(clientProxy.getHost(), clientProxy.getPort()),
+					new UsernamePasswordCredentials(clientProxy.getUsername(), clientProxy.getPassword()));
 		}
 	}
 	
