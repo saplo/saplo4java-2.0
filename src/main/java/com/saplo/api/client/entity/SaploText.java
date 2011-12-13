@@ -47,6 +47,7 @@ public class SaploText {
 	private Date publishDate;
 	private URI url;
 	private String authors;
+	private String extId;
 	private SaploText relatedToText;
 	private SaploGroup relatedToGroup;
 	private double relatedRelevance;
@@ -69,6 +70,7 @@ public class SaploText {
 		publishDate = null;
 		url = null;
 		authors = ClientUtil.NULL_STRING;
+		extId = ClientUtil.NULL_STRING;
 	}
 	
 	/**
@@ -86,6 +88,7 @@ public class SaploText {
 		publishDate = null;
 		url = null;
 		authors = ClientUtil.NULL_STRING;
+		extId = ClientUtil.NULL_STRING;
 	}
 	
 	/**
@@ -239,6 +242,20 @@ public class SaploText {
 	}
 	
 	/**
+	 * @return the extId
+	 */
+	public String getExtId() {
+		return extId;
+	}
+
+	/**
+	 * @param extId the extId to set
+	 */
+	public void setExtId(String extId) {
+		this.extId = extId;
+	}
+
+	/**
 	 * @return the relatedToText
 	 */
 	public SaploText getRelatedToText() {
@@ -345,6 +362,8 @@ public class SaploText {
 			saploCollection.setId(json.getInt("collection_id"));
 			saploText.setCollection(saploCollection);
 		}
+		if(json.has("ext_text_id"))
+			saploText.setExtId(json.getString("ext_text_id"));
 		if(json.has("relevance"))
 			saploText.setRelatedRelevance(json.getDouble("relevance"));
 	}

@@ -62,9 +62,7 @@ public class SaploTextManager {
 	 */
 	public void create(SaploText saploText) throws JSONException, SaploClientException {
 
-		if(saploText.getCollection() == null || saploText.getCollection().getId() <= 0)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.collection", "text.collection.id");
+		verifyCollection(saploText);
 		if(ClientUtil.NULL_STRING.equals(saploText.getBody()))
 			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
 					ResponseCodes.CODE_CLIENT_FIELD, "text.body");
@@ -84,6 +82,8 @@ public class SaploTextManager {
 			params.put("url", saploText.getUrl().toString());
 		if(!ClientUtil.NULL_STRING.equals(saploText.getAuthors()))
 			params.put("authors", saploText.getAuthors());
+		if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
+			params.put("ext_text_id", saploText.getExtId());
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "text.create", params);
 
@@ -174,17 +174,16 @@ public class SaploTextManager {
 	 * @throws SaploClientException 
 	 */
 	public void get(SaploText saploText) throws JSONException, SaploClientException {
-
-		if(saploText.getCollection() == null || saploText.getCollection().getId() <= 0)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.collection", "text.collection.id");
-		if(saploText.getId() <= 0)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.id");
+		
+		verifyCollection(saploText);
+		verifyId(saploText);
 
 		JSONObject params = new JSONObject();
 		params.put("collection_id", saploText.getCollection().getId());
-		params.put("text_id", saploText.getId());
+		if(saploText.getId() > 0)
+			params.put("text_id", saploText.getId());
+		if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
+			params.put("ext_text_id", saploText.getExtId());
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "text.get", params);
 
@@ -249,17 +248,13 @@ public class SaploTextManager {
 	 */
 	public void update(SaploText saploText) throws JSONException, SaploClientException {
 
-		if(saploText.getCollection() == null || saploText.getCollection().getId() <= 0)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.collection", "text.collection.id");
-		if(saploText.getId() <= 0)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.id");
+		verifyCollection(saploText);
+		verifyId(saploText);
 
 		JSONObject params = new JSONObject();
 		params.put("collection_id", saploText.getCollection().getId());
-		params.put("text_id", saploText.getId());
-
+		if(saploText.getId() > 0)
+			params.put("text_id", saploText.getId());
 		if(!ClientUtil.NULL_STRING.equals(saploText.getHeadline()))
 			params.put("headline", saploText.getHeadline());
 
@@ -274,6 +269,9 @@ public class SaploTextManager {
 
 		if(!ClientUtil.NULL_STRING.equals(saploText.getAuthors()))
 			params.put("authors", saploText.getAuthors());
+		
+		if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
+			params.put("ext_text_id", saploText.getExtId());
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "text.update", params);
 
@@ -317,16 +315,15 @@ public class SaploTextManager {
 	 */
 	public boolean delete(SaploText saploText) throws JSONException, SaploClientException {
 
-		if(saploText.getCollection() == null || saploText.getCollection().getId() <= 0)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.collection", "text.collection.id");
-		if(saploText.getId() <= 0)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.id");
+		verifyCollection(saploText);
+		verifyId(saploText);
 
 		JSONObject params = new JSONObject();
 		params.put("collection_id", saploText.getCollection().getId());
-		params.put("text_id", saploText.getId());
+		if(saploText.getId() > 0)
+			params.put("text_id", saploText.getId());
+		if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
+			params.put("ext_text_id", saploText.getExtId());
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "text.delete", params);
 
@@ -396,16 +393,16 @@ public class SaploTextManager {
 
 		List<SaploTag> tagList = new ArrayList<SaploTag>();
 
-		if(saploText.getCollection() == null || saploText.getCollection().getId() <= 0)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.collection", "text.collection.id");
-		if(saploText.getId() <= 0)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.id");
+		verifyCollection(saploText);
+		verifyId(saploText);
 
 		JSONObject params = new JSONObject();
 		params.put("collection_id", saploText.getCollection().getId());
-		params.put("text_id", saploText.getId());
+		if(saploText.getId() > 0)
+			params.put("text_id", saploText.getId());
+		if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
+			params.put("ext_text_id", saploText.getExtId());
+
 		if(wait >= 0)
 			params.put("wait", wait);
 		params.put("skip_categorization", skipCategorization);
@@ -552,30 +549,29 @@ public class SaploTextManager {
 			SaploCollection[] collectionScope, int wait, int limit, 
 			double minThreshold, double maxThreshold) throws JSONException, SaploClientException {
 
-		if(saploText.getCollection() == null || saploText.getCollection().getId() <= 0)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.collection", "text.collection.id");
-		if(saploText.getId() <= 0)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.id");
+		verifyCollection(saploText);
+		verifyId(saploText);
 
 		List<SaploText> relatedTextsList = new ArrayList<SaploText>();
 
 		JSONObject params = new JSONObject();
 		params.put("collection_id", saploText.getCollection().getId());
-		params.put("text_id", saploText.getId());
+		if(saploText.getId() > 0)
+			params.put("text_id", saploText.getId());
+		if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
+			params.put("ext_text_id", saploText.getExtId());
 		if(relatedBy != null)
 			params.put("related_by", relatedBy);
+		
+		JSONArray collectionIds = new JSONArray();
 		if(collectionScope != null && collectionScope.length > 0) {
-			int collectionIds[] = new int[collectionScope.length];
 			for(int i = 0; i < collectionScope.length; i++) {
-				collectionIds[i] = collectionScope[i].getId();
+				collectionIds.put(collectionScope[i].getId());
 			}
-			params.put("collection_scope", collectionIds);
 		} else {
-			int collectionIds[] = {saploText.getCollection().getId()};
-			params.put("collection_scope", collectionIds);
+			collectionIds.put(saploText.getCollection().getId());
 		}
+		params.put("collection_scope", collectionIds);
 
 		if(wait >= 0)
 			params.put("wait", wait);
@@ -721,27 +717,29 @@ public class SaploTextManager {
 			SaploGroup[] groupScope, int wait, double minThreshold, 
 			double maxThreshold) throws JSONException, SaploClientException {
 
-		if(saploText.getCollection() == null || saploText.getCollection().getId() <= 0)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.collection", "text.collection.id");
-		if(saploText.getId() <= 0)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.id");
+		verifyCollection(saploText);
+		verifyId(saploText);
 
 		List<SaploGroup> relatedGroupsList = new ArrayList<SaploGroup>();
 
 		JSONObject params = new JSONObject();
 		params.put("collection_id", saploText.getCollection().getId());
-		params.put("text_id", saploText.getId());
+		if(saploText.getId() > 0)
+			params.put("text_id", saploText.getId());
+		if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
+			params.put("ext_text_id", saploText.getExtId());
+
 		if(relatedBy != null)
 			params.put("related_by", relatedBy);
+		
 		if(groupScope != null && groupScope.length > 0) {
-			int groupIds[] = new int[groupScope.length];
+			JSONArray groupIds = new JSONArray();
 			for(int i = 0; i < groupScope.length; i++) {
-				groupIds[i] = groupScope[i].getId();
+				groupIds.put(groupScope[i].getId());
 			}
 			params.put("group_scope", groupIds);
 		}
+		
 		if(wait >= 0)
 			params.put("wait", wait);
 		if(minThreshold >= 0 && minThreshold <= 1)
@@ -845,4 +843,17 @@ public class SaploTextManager {
 		
 		return text;
 	}
+	
+	private static void verifyCollection(SaploText saploText) throws SaploClientException {
+		if(saploText.getCollection() == null || saploText.getCollection().getId() <= 0)
+			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
+					ResponseCodes.CODE_CLIENT_FIELD, "text.collection", "text.collection.id");
+	}
+	
+	private static void verifyId(SaploText saploText) throws SaploClientException {
+		if(saploText.getId() <= 0 && ClientUtil.NULL_STRING.equals(saploText.getExtId()))
+			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
+					ResponseCodes.CODE_CLIENT_FIELD, "text.id OR text.ext_id");
+	}
+	
 }
