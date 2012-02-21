@@ -72,8 +72,6 @@ public class SaploTextManager {
 		params.put("body", saploText.getBody());
 		if(!ClientUtil.NULL_STRING.equals(saploText.getHeadline()))
 			params.put("headline", saploText.getHeadline());
-		if(!ClientUtil.NULL_STRING.equals(saploText.getLead()))
-			params.put("lead", saploText.getLead());
 		if(saploText.getPublishDate() != null)
 			params.put("publish_date", sf.format(saploText.getPublishDate()));
 		else
@@ -833,6 +831,40 @@ public class SaploTextManager {
 		}));
 	}
 	
+	public void addTag(SaploText saploText, SaploTag saploTag) throws SaploClientException, JSONException {
+		verifyCollection(saploText);
+		verifyId(saploText);
+
+		JSONObject params = new JSONObject();
+		params.put("collection_id", saploText.getCollection().getId());
+		if(saploText.getId() > 0)
+			params.put("text_id", saploText.getId());
+		if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
+			params.put("ext_text_id", saploText.getExtId());
+
+		if(!ClientUtil.NULL_STRING.equals(saploTag.getTagWord())) {
+			params.put("tag", saploTag.getTagWord());
+		}
+		params.put("category", saploTag.getCategory().toString().toLowerCase());
+		params.put("relevance", saploTag.getRelevance());
+		
+		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "text.addTag", params);
+
+		JSONRPCResponseObject response = client.sendAndReceive(request);
+
+		JSONObject rawResult = (JSONObject)client.parseResponse(response);
+
+//		JSONArray groups = rawResult.getJSONObject("related_groups");
+
+	}
+	
+	/**
+	 * Create a new text for a given collection id with a given text_id
+	 * 
+	 * @param collectionId
+	 * @param textId
+	 * @return
+	 */
 	public static SaploText getTextObject(int collectionId, int textId) {
 		SaploCollection col = new SaploCollection();
 		col.setId(collectionId);
@@ -844,12 +876,18 @@ public class SaploTextManager {
 		return text;
 	}
 	
+	/*
+	 * ensure the given text has collection_id
+	 */
 	private static void verifyCollection(SaploText saploText) throws SaploClientException {
 		if(saploText.getCollection() == null || saploText.getCollection().getId() <= 0)
 			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
 					ResponseCodes.CODE_CLIENT_FIELD, "text.collection", "text.collection.id");
 	}
 	
+	/*
+	 * ensure the given text has at least one of the text ids
+	 */
 	private static void verifyId(SaploText saploText) throws SaploClientException {
 		if(saploText.getId() <= 0 && ClientUtil.NULL_STRING.equals(saploText.getExtId()))
 			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 

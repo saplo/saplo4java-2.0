@@ -36,13 +36,11 @@ public class SaploText {
 	
 	private static SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 	public static final int MAX_HEADLINE_LENGTH = 250;
-	public static final int MAX_LEAD_LENGTH = 250;
 	public static final int MAX_BODY_LENGTH = 100000;
 	
 	private int id;
 	private SaploCollection saploCollection; // required
 	private String headline;
-	private String lead;
 	private String body; // required
 	private Date publishDate;
 	private URI url;
@@ -66,7 +64,6 @@ public class SaploText {
 		saploCollection = null;
 		body = ClientUtil.NULL_STRING;
 		headline = ClientUtil.NULL_STRING;
-		lead = ClientUtil.NULL_STRING;
 		publishDate = null;
 		url = null;
 		authors = ClientUtil.NULL_STRING;
@@ -138,25 +135,6 @@ public class SaploText {
 			this.headline = headline;
 	}
 	
-	/**
-	 * @return the lead
-	 */
-	public String getLead() {
-		return lead;
-	}
-
-	/**
-	 * @param lead - the text lead to set
-	 * If the lead provided is longer than {@value #MAX_LEAD_LENGTH} chars,
-	 * then it is truncated to {@value #MAX_LEAD_LENGTH} chars
-	 */
-	public void setLead(String lead) {
-		if(lead != null && lead.length() > MAX_LEAD_LENGTH)
-			this.lead = lead.substring(0, MAX_LEAD_LENGTH);
-		else
-			this.lead = lead;
-	}
-
 	/**
 	 * @return the body
 	 */
@@ -339,8 +317,6 @@ public class SaploText {
 			saploText.setId(json.getInt("text_id"));
 		if(json.has("headline"))
 			saploText.setHeadline(json.getString("headline"));
-		if(json.has("lead"))
-			saploText.setLead(json.getString("lead"));
 		if(json.has("body"))
 			saploText.setBody(json.getString("body"));
 		if(json.has("publish_date"))
