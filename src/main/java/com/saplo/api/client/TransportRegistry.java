@@ -18,7 +18,7 @@ public class TransportRegistry {
 	 *
 	 */
 	private static class TransportRegistryHolder {
-		private static TransportRegistry singleton = new TransportRegistry();
+		private static final TransportRegistry singleton = new TransportRegistry();
 	}
 
 	/**

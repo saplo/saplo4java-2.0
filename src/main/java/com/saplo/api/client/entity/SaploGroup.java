@@ -4,7 +4,6 @@
 package com.saplo.api.client.entity;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -13,6 +12,7 @@ import org.json.JSONObject;
 
 import com.saplo.api.client.entity.SaploCollection.Language;
 import com.saplo.api.client.util.ClientUtil;
+import com.saplo.api.client.util.ThreadSafeSimpleDateFormat;
 
 /**
  * @author progre55
@@ -20,7 +20,7 @@ import com.saplo.api.client.util.ClientUtil;
  */
 public class SaploGroup {
 
-	private static SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+	private static ThreadSafeSimpleDateFormat sf = new ThreadSafeSimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
 	private int id = ClientUtil.NULL_INT;
 	private String name = ClientUtil.NULL_STRING; // required

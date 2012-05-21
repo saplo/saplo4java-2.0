@@ -6,7 +6,6 @@ package com.saplo.api.client.entity;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -14,6 +13,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.saplo.api.client.util.ClientUtil;
+import com.saplo.api.client.util.ThreadSafeSimpleDateFormat;
 
 /**
  * A SaploText entity, the same as Article in SaploAPI v1.
@@ -34,7 +34,8 @@ public class SaploText {
 		semantic, statistic, automatic
 	}
 	
-	private static SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+	private static ThreadSafeSimpleDateFormat sf = new ThreadSafeSimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+	private static ThreadSafeSimpleDateFormat sf2 = new ThreadSafeSimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	public static final int MAX_HEADLINE_LENGTH = 250;
 	public static final int MAX_BODY_LENGTH = 100000;
 	
@@ -173,8 +174,7 @@ public class SaploText {
 	 */
 	public void setPublishDate(String publishDate) {
 		try {
-			SimpleDateFormat simple = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-			this.publishDate = simple.parse(publishDate);
+			this.publishDate = sf2.parse(publishDate);
 		} catch (ParseException e) {
 			// do nothing
 		}
@@ -323,6 +323,8 @@ public class SaploText {
 			try {
 				saploText.setPublishDate(sf.parse(json.getString("publish_date")));
 			} catch (ParseException e) {
+				//
+			} catch (NumberFormatException e) {
 				//
 			}
 		if(json.has("url"))

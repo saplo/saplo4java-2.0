@@ -3,7 +3,6 @@
  */
 package com.saplo.api.client.manager;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -27,6 +26,7 @@ import com.saplo.api.client.entity.SaploTag;
 import com.saplo.api.client.entity.SaploText;
 import com.saplo.api.client.entity.SaploText.RelatedBy;
 import com.saplo.api.client.util.ClientUtil;
+import com.saplo.api.client.util.ThreadSafeSimpleDateFormat;
 
 /**
  * A manager class for operations on {@link SaploText} objects
@@ -39,7 +39,7 @@ public class SaploTextManager {
 	private SaploClient client;
 	private ExecutorService es;
 	private static final int thread_count = 5;
-	private SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");;
+	private ThreadSafeSimpleDateFormat sf = new ThreadSafeSimpleDateFormat("yyyy-MM-dd HH:mm:ss");;
 
 	/**
 	 * A simple constructor 

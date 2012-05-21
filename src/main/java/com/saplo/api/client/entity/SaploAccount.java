@@ -4,11 +4,12 @@
 package com.saplo.api.client.entity;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import com.saplo.api.client.util.ThreadSafeSimpleDateFormat;
 
 /**
  * Information about the user account
@@ -17,7 +18,7 @@ import org.json.JSONObject;
  */
 public class SaploAccount {
 	
-	private static SimpleDateFormat sf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+	private static ThreadSafeSimpleDateFormat sf = new ThreadSafeSimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 	private int id;
 	private Date expirationDate;
 	private ApiCalls apiCalls;
