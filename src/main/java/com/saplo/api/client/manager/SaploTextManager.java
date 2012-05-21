@@ -82,6 +82,8 @@ public class SaploTextManager {
 			params.put("authors", saploText.getAuthors());
 		if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
 			params.put("ext_text_id", saploText.getExtId());
+		
+		params.put("force", saploText.isForce());
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "text.create", params);
 
@@ -270,6 +272,8 @@ public class SaploTextManager {
 		
 		if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
 			params.put("ext_text_id", saploText.getExtId());
+		
+		params.put("force", saploText.isForce());
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "text.update", params);
 

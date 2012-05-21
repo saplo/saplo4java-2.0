@@ -47,6 +47,7 @@ public class SaploText {
 	private URI url;
 	private String authors;
 	private String extId;
+	private boolean force;
 	private SaploText relatedToText;
 	private SaploGroup relatedToGroup;
 	private double relatedRelevance;
@@ -231,6 +232,20 @@ public class SaploText {
 	 */
 	public void setExtId(String extId) {
 		this.extId = extId;
+	}
+
+	/**
+	 * @return the force
+	 */
+	public boolean isForce() {
+		return force;
+	}
+
+	/**
+	 * @param force the force to set
+	 */
+	public void setForce(boolean force) {
+		this.force = force;
 	}
 
 	/**
