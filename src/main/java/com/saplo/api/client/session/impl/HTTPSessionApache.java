@@ -1,7 +1,7 @@
 /**
  * 
  */
-package com.saplo.api.client;
+package com.saplo.api.client.session.impl;
 
 import java.io.IOException;
 import java.net.URI;
@@ -28,9 +28,15 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import com.saplo.api.client.TransportRegistry.SessionFactory;
+import com.saplo.api.client.ClientError;
+import com.saplo.api.client.ClientProxy;
+import com.saplo.api.client.ResponseCodes;
+import com.saplo.api.client.SaploClientException;
 import com.saplo.api.client.entity.JSONRPCRequestObject;
 import com.saplo.api.client.entity.JSONRPCResponseObject;
+import com.saplo.api.client.session.Session;
+import com.saplo.api.client.session.TransportRegistry;
+import com.saplo.api.client.session.TransportRegistry.SessionFactory;
 
 /**
  * @author progre55
@@ -38,12 +44,11 @@ import com.saplo.api.client.entity.JSONRPCResponseObject;
  */
 public class HTTPSessionApache implements Session {
 
-//	private static Log logger = LogFactory.getLog(HTTPSessionApache.class);
 	protected URI uri;
 	protected volatile String params;
 	protected HttpHost proxy = new HttpHost("localhost");
-	protected ClientProxy clientProxy = null;
-	protected CredentialsProvider proxyCredentials = null;
+	protected ClientProxy clientProxy;
+	protected CredentialsProvider proxyCredentials;
 
 	public HTTPSessionApache(URI uri, String params) {
 		this.uri = uri;

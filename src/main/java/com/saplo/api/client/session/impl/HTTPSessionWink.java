@@ -1,4 +1,4 @@
-package com.saplo.api.client;
+package com.saplo.api.client.session.impl;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -12,9 +12,15 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import com.saplo.api.client.TransportRegistry.SessionFactory;
+import com.saplo.api.client.ClientError;
+import com.saplo.api.client.ClientProxy;
+import com.saplo.api.client.ResponseCodes;
+import com.saplo.api.client.SaploClientException;
 import com.saplo.api.client.entity.JSONRPCRequestObject;
 import com.saplo.api.client.entity.JSONRPCResponseObject;
+import com.saplo.api.client.session.Session;
+import com.saplo.api.client.session.TransportRegistry;
+import com.saplo.api.client.session.TransportRegistry.SessionFactory;
 
 /**
  * @author progre55

@@ -1,7 +1,9 @@
-package com.saplo.api.client;
+package com.saplo.api.client.session;
 
 import org.json.JSONException;
 
+import com.saplo.api.client.ClientProxy;
+import com.saplo.api.client.SaploClientException;
 import com.saplo.api.client.entity.JSONRPCRequestObject;
 import com.saplo.api.client.entity.JSONRPCResponseObject;
 
@@ -33,7 +35,7 @@ public interface Session {
 	void setProxy(ClientProxy proxy);
 		
 	/**
-	 * Close the session and release the resources if neccessary
+	 * Close the session and release the resources if necessary
 	 */
 	void close();
 }

@@ -1,12 +1,15 @@
 /**
  * 
  */
-package com.saplo.api.client;
+package com.saplo.api.client.session.impl;
 
 import java.net.URI;
 import java.util.HashMap;
 
-import com.saplo.api.client.TransportRegistry.SessionFactory;
+import com.saplo.api.client.ClientProxy;
+import com.saplo.api.client.session.Session;
+import com.saplo.api.client.session.TransportRegistry;
+import com.saplo.api.client.session.TransportRegistry.SessionFactory;
 
 /**
  * @author progre55
@@ -32,7 +35,7 @@ public class HTTPSSession extends HTTPSessionApache {
 				synchronized (sessionMap) {
 					session = sessionMap.get(uri);
 					if(session == null) {
-						if(proxy != null)
+						if(null != proxy)
 							session = new HTTPSSession(uri, params, proxy);
 						else
 							session = new HTTPSSession(uri, params);

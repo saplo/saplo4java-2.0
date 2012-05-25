@@ -18,7 +18,7 @@ public class JSONRPCRequestObject {
 	private Integer id;
 	private String method;
 	private Object params;
-	private String version = "2.0";
+	private final String version = "2.0";
 	
 	public JSONRPCRequestObject(Integer id) {
 		this.id = id;
