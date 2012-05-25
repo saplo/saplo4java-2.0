@@ -702,22 +702,19 @@ public class SaploTextManager {
 	 * Search for groups that are related to a given text.
 	 *  
 	 * @param saploText - the {@link SaploText} object to compare to
-	 * @param relatedBy - How the texts should be related.
-	 * {@link RelatedBy#automatic} - let the engine to choose the best approach.
-	 * {@link RelatedBy#semantic} - search for texts based on the same semantic meaning.
-	 * {@link RelatedBy#statistic} - search for texts based on statistical relations.
 	 * @param groupScope - the {@link SaploGroup}s the text should be compared to
 	 * @param wait - maximum time to wait for the result to be calculated.
 	 * @param minThreshold - the minimum similarity threshold, between 0 and 1 (1 = 100% similar)
 	 * @param maxThreshold - the maximum similarity threshold, between 0 and 1 (1 = 100% similar)
+	 * @param limit - set max number of results.
 	 * @return relatedGroupsList - a {@link List} containing related texts to the given group(s)
 	 * 
 	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public void relatedGroups(SaploText saploText, RelatedBy relatedBy, 
+	public void relatedGroups(SaploText saploText, 
 			SaploGroup[] groupScope, int wait, double minThreshold, 
-			double maxThreshold) throws JSONException, SaploClientException {
+			double maxThreshold, int limit) throws JSONException, SaploClientException {
 
 		verifyCollection(saploText);
 		verifyId(saploText);
@@ -731,9 +728,6 @@ public class SaploTextManager {
 		if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
 			params.put("ext_text_id", saploText.getExtId());
 
-		if(relatedBy != null)
-			params.put("related_by", relatedBy);
-		
 		if(groupScope != null && groupScope.length > 0) {
 			JSONArray groupIds = new JSONArray();
 			for(int i = 0; i < groupScope.length; i++) {
@@ -748,6 +742,8 @@ public class SaploTextManager {
 			params.put("min_threshold", minThreshold);
 		if(maxThreshold >= 0 && minThreshold <= 1)
 			params.put("max_threshold", maxThreshold);
+		if(limit > 0)
+			params.put("limit", limit);
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "text.relatedGroups", params);
 
@@ -773,24 +769,21 @@ public class SaploTextManager {
 	 * RelatedBy, SaploCollection[], int, int, double, double)}
 	 *  
 	 * @param saploText - the {@link SaploText} object to compare to
-	 * @param relatedBy - How the texts should be related.
-	 * {@link RelatedBy#automatic} - let the engine to choose the best approach.
-	 * {@link RelatedBy#semantic} - search for texts based on the same semantic meaning.
-	 * {@link RelatedBy#statistic} - search for texts based on statistical relations.
 	 * @param groupScope - the {@link SaploGroup}s the text should be compared to
 	 * @param wait - maximum time to wait for the result to be calculated.
 	 * @param minThreshold - the minimum similarity threshold, between 0 and 1 (1 = 100% similar)
 	 * @param maxThreshold - the maximum similarity threshold, between 0 and 1 (1 = 100% similar)
+	 * @param limit - set max number of results.
 	 * @return SaploFuture<relatedGroupsList> - a {@link List} containing related texts to the given group(s)
 	 * @throws SaploClientException
 	 */
-	public SaploFuture<Boolean> relatedGroupsAsync(final SaploText saploText, final RelatedBy relatedBy, 
+	public SaploFuture<Boolean> relatedGroupsAsync(final SaploText saploText, 
 			final SaploGroup[] groupScope, final int wait, final double minThreshold, 
-			final double maxThreshold) {
+			final double maxThreshold, final int limit) {
 		return new SaploFuture<Boolean>( es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
 				try {
-					relatedGroups(saploText, relatedBy, groupScope, wait, minThreshold, maxThreshold);
+					relatedGroups(saploText, groupScope, wait, minThreshold, maxThreshold, limit);
 				} catch (JSONException e) {
 					return false;
 				}
@@ -809,7 +802,7 @@ public class SaploTextManager {
 	 * @throws SaploClientException 
 	 */
 	public void relatedGroups(SaploText saploText) throws JSONException, SaploClientException {
-		relatedGroups(saploText, null, null, -1, -1, -1);
+		relatedGroups(saploText, null, -1, -1, -1, -1);
 	}
 
 	/**
@@ -835,7 +828,17 @@ public class SaploTextManager {
 		}));
 	}
 	
-	public void addTag(SaploText saploText, SaploTag saploTag) throws SaploClientException, JSONException {
+	/**
+	 * Give feedback by adding a tag to a text.
+	 * 
+	 * @param saploText
+	 * @param saploTag
+	 * @return tag - newly added tag returned by the API
+	 * 
+	 * @throws SaploClientException
+	 * @throws JSONException
+	 */
+	public SaploTag addTag(SaploText saploText, SaploTag saploTag) throws SaploClientException, JSONException {
 		verifyCollection(saploText);
 		verifyId(saploText);
 
@@ -857,8 +860,8 @@ public class SaploTextManager {
 		JSONRPCResponseObject response = client.sendAndReceive(request);
 
 		JSONObject rawResult = (JSONObject)client.parseResponse(response);
-
-//		JSONArray groups = rawResult.getJSONObject("related_groups");
+		
+		return SaploTag.convertFromJSONToTag(rawResult);
 
 	}
 	
