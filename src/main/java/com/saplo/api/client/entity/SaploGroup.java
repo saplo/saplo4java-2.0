@@ -7,7 +7,6 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.saplo.api.client.entity.SaploCollection.Language;
@@ -210,30 +209,25 @@ public class SaploGroup {
 	 * 
 	 * @param json - the {@link JSONObject} to parse
 	 * @param saploGroup - the {@link SaploGroup} object to write the convertion results to
-	 * 
-	 * @throws JSONException
 	 */
-	public static void convertFromJSONToGroup(JSONObject json, SaploGroup saploGroup) throws JSONException {
+	public static void convertFromJSONToGroup(JSONObject json, SaploGroup saploGroup) {
 
-		if(json.has("group_id"))
-			saploGroup.setId(json.getInt("group_id"));
-		if(json.has("name"))
-			saploGroup.setName(json.getString("name"));
-		if(json.has("description"))
-			saploGroup.setDescription(json.getString("description"));
+		saploGroup.setId(json.optInt("group_id"));
+		saploGroup.setName(json.optString("name"));
+		saploGroup.setDescription(json.optString("description"));
 		if(json.has("language"))
-			saploGroup.setLanguage(SaploCollection.Language.valueOf(json.getString("language")));
+			saploGroup.setLanguage(SaploCollection.Language.valueOf(json.optString("language")));
 		try {
 			if(json.has("date_created"))
-				saploGroup.setDateCreated(sf.parse(json.getString("date_created")));
+				saploGroup.setDateCreated(sf.parse(json.optString("date_created")));
 			if(json.has("date_updated"))
-				saploGroup.setDateUpdated(sf.parse(json.getString("date_updated")));
+				saploGroup.setDateUpdated(sf.parse(json.optString("date_updated")));
 
 		} catch (ParseException e) {
 			e.printStackTrace();
 		}
 		if(json.has("relevance"))
-			saploGroup.setRelatedRelevance(json.getDouble("relevance"));
+			saploGroup.setRelatedRelevance(json.optDouble("relevance"));
 	}
 	
 	/**
@@ -241,9 +235,8 @@ public class SaploGroup {
 	 * 
 	 * @param json - the {@link JSONObject} to parse
 	 * @return group - the {@link SaploGroup} representation of the json object
-	 * @throws JSONException
 	 */
-	public static SaploGroup convertFromJSONToGroup(JSONObject json) throws JSONException {
+	public static SaploGroup convertFromJSONToGroup(JSONObject json) {
 		SaploGroup saploGroup = new SaploGroup();
 		convertFromJSONToGroup(json, saploGroup);
 		return saploGroup;

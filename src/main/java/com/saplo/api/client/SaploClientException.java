@@ -67,6 +67,17 @@ public class SaploClientException extends Exception {
 	}
 
 	/**
+	 * 
+	 * @param code - Client exception code
+	 * @param t - cause
+	 */
+	public SaploClientException(int code, Throwable t) {
+		super(t.getMessage());
+		this.cause = t;
+		this.errorCode = code;
+	}
+	
+	/**
 	 * @param t - API-Exception cause
 	 */
 	public SaploClientException(Throwable t) {

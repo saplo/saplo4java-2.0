@@ -6,6 +6,7 @@ package com.saplo.api.client.entity;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.saplo.api.client.ResponseCodes;
 import com.saplo.api.client.SaploClientException;
 
 /**
@@ -28,17 +29,18 @@ public class JSONRPCErrorObject {
      * MUST contain an error code of type int
      * 
      * @param error - and error object received from an rpc-response
-     * 
-     * @throws JSONException - mainly if the error does not contain "code"
-     * of type int
      */
-    public JSONRPCErrorObject(JSONObject error) throws JSONException {
-	code = error.getInt("code");
+    public JSONRPCErrorObject(JSONObject error) {
+	try {
+		code = error.getInt("code");
+	} catch (JSONException e) {
+		code = ResponseCodes.CODE_MALFORMED_RESPONSE;
+	}
 
-	if(error.has("msg"))
-	    message = error.getString("msg");
+	message = error.optString("msg");
+	
 	if(error.has("data")) {
-	    data = error.get("data");
+	    data = error.opt("data");
 	    clientException = new SaploClientException(message, code, new Throwable(data.toString()));
 	} else {
 	    clientException = new SaploClientException(message, code);

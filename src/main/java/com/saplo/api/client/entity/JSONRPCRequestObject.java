@@ -127,9 +127,13 @@ public class JSONRPCRequestObject {
 	 *  
 	 * @param indent
 	 * @return 
-	 * @throws JSONException
 	 */
-	public String toString(int indent) throws JSONException {
-		return this.getJSONObject().toString(indent);
+	public String toString(int indent) {
+		try {
+			return this.getJSONObject().toString(indent);
+		} catch (JSONException e) {
+			e.printStackTrace();
+			return toString();
+		}
 	}
 }

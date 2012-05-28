@@ -1,19 +1,22 @@
 package com.saplo.api.client;
 
 import java.io.Serializable;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.saplo.api.client.entity.JSONRPCErrorObject;
 import com.saplo.api.client.entity.JSONRPCRequestObject;
 import com.saplo.api.client.entity.JSONRPCResponseObject;
+import com.saplo.api.client.entity.SaploFuture;
 import com.saplo.api.client.manager.SaploAuthManager;
 import com.saplo.api.client.session.Session;
 import com.saplo.api.client.session.TransportRegistry;
@@ -30,18 +33,21 @@ public class SaploClient implements Serializable {
 
 	private static final long serialVersionUID = -3012934547356595675L;
 
-	protected static final Logger logger = LoggerFactory.getLogger(SaploClient.class);
+	private static final Logger logger = LoggerFactory.getLogger(SaploClient.class);
 
-	protected static Session session;
+	private static Session session;
 
-	protected boolean ssl;
-	protected String endpoint;
-	protected String apiKey;
-	protected String secretKey;
-	protected String accessToken;
+	private boolean ssl;
+	private String endpoint;
+	private String apiKey;
+	private String secretKey;
+	private String accessToken;
+	
+	// an ES for handling "async" methods
+	private ExecutorService es;
 
-	protected static final String DEFAULT_ENDPOINT = "http://api.saplo.com/rpc/json";
-	protected static final String DEFAULT_SSL_ENDPOINT = "https://api.saplo.com/rpc/json";
+	private static final String DEFAULT_ENDPOINT = "http://api.saplo.com/rpc/json";
+	private static final String DEFAULT_SSL_ENDPOINT = "https://api.saplo.com/rpc/json";
 
 	/**
 	 * A Builder class for SaploClient.
@@ -69,7 +75,10 @@ public class SaploClient implements Serializable {
 		public Builder endpoint(String endpoint)
 		{ this.endpoint = endpoint;	return this; }
 		public Builder ssl(boolean ssl)
-		{ this.ssl = ssl;	return this; }
+		{ this.ssl = ssl;
+		if(this.endpoint.equals(DEFAULT_ENDPOINT))
+			this.endpoint = DEFAULT_SSL_ENDPOINT;
+		return this; }
 		public Builder accessToken(String accessToken)
 		{ this.accessToken = accessToken;	return this; }
 		public Builder proxy(ClientProxy proxy)
@@ -96,25 +105,27 @@ public class SaploClient implements Serializable {
 	private SaploClient(Builder builder) throws SaploClientException {
 		apiKey = builder.apiKey;
 		secretKey = builder.secretKey;
+		ssl = builder.ssl;
+		apiKey = builder.apiKey;
+		secretKey = builder.secretKey;
+		endpoint = builder.endpoint;
 		
-		this.ssl = builder.ssl;
-		this.apiKey = builder.apiKey;
-		this.secretKey = builder.secretKey;
-		this.endpoint = builder.endpoint;
+		es = Executors.newFixedThreadPool(20);
+		
 		this.setupServerEnvironment();
 		createSession(builder.accessToken, builder.proxy);
 		lock = new ReentrantLock();
 		sleeping = lock.newCondition();
 	}
 	
-	protected long lastReconnectAttempt = 0;
-	protected long lastSuccessfulReconnect = 0;
-	protected final long reconnectTimeout = 3 * 1000; // 3 seconds
-	protected long reconnectCount = 0;
-	protected long maxReconnectCount = 10;
+	private long lastReconnectAttempt = 0;
+	private long lastSuccessfulReconnect = 0;
+	private final long reconnectTimeout = 3 * 1000; // 3 seconds
+	private long reconnectCount = 0;
+	private long maxReconnectCount = 10;
 
-	protected final Lock lock;
-	protected final Condition sleeping;
+	private final Lock lock;
+	private final Condition sleeping;
 
 	/**
 	 * Set a proxy address for the client to commumicate with the API
@@ -129,7 +140,7 @@ public class SaploClient implements Serializable {
 	/*
 	 * Get authenticated and store the accessToken in the session
 	 */
-	protected synchronized void createSession(String accToken, ClientProxy proxy) throws SaploClientException {
+	private synchronized void createSession(String accToken, ClientProxy proxy) throws SaploClientException {
 		session = TransportRegistry.getTransportRegistryInstance()
 				.createSession(endpoint, "access_token=" + accToken, proxy);
 
@@ -140,7 +151,10 @@ public class SaploClient implements Serializable {
 		authenticateSession();
 	}
 
-	protected synchronized boolean reCreateSession() throws SaploClientException {
+	/*
+	 * FIXME fix, it's too complicated
+	 */
+	private synchronized boolean reCreateSession() throws SaploClientException {
 
 		lock.lock();
 		try  {
@@ -186,19 +200,20 @@ public class SaploClient implements Serializable {
 		}
 	}
 
-	protected void authenticateSession() throws SaploClientException {
+	/*
+	 * Get authed and save the access_token
+	 */
+	private void authenticateSession() throws SaploClientException {
 		SaploAuthManager auth = new SaploAuthManager(this);
-		try {
-			accessToken = auth.accessToken(apiKey, secretKey);
-
-		} catch (JSONException ex) {
-			logger.error("Exception occured ", ex);
-			throw new ClientError(ex);
-		}
+		accessToken = auth.accessToken(apiKey, secretKey);
 
 		session.setParams("access_token=" + accessToken);
 	}
 
+	/**
+	 * 
+	 * @return lastSuccessfulReconnect in milliseconds
+	 */
 	public long getLastSuccessfulReconnect() {
 		return lastSuccessfulReconnect;
 	}
@@ -229,7 +244,6 @@ public class SaploClient implements Serializable {
 	 */
 	public boolean isUp() throws SaploClientException {
 
-		try {
 			JSONArray params = new JSONArray();
 			params.put("ping");
 
@@ -240,19 +254,15 @@ public class SaploClient implements Serializable {
 
 			return "pong".equals(result);
 
-		} catch (JSONException e) {
-			return false;
-		}
 	}
 
 	/**
 	 * Shut down the session
 	 * 
 	 * @return success / fail
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public boolean shutdown() throws JSONException, SaploClientException {
+	public boolean shutdown() throws SaploClientException {
 
 		JSONArray params = new JSONArray();
 
@@ -272,7 +282,7 @@ public class SaploClient implements Serializable {
 	/*
 	 * Register a Session instance with the TransportRegistry
 	 */
-	protected void setupServerEnvironment() {
+	private void setupServerEnvironment() {
 		if(ssl)
 			HTTPSSession.register(TransportRegistry.getTransportRegistryInstance());
 		else
@@ -286,14 +296,36 @@ public class SaploClient implements Serializable {
 	 * @param message - a JSONRPCRequestObject to send to the server (API)
 	 * @return JSONRPCResponseObject with response params.
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public JSONRPCResponseObject sendAndReceive(JSONRPCRequestObject request) throws JSONException, SaploClientException {
+	public JSONRPCResponseObject sendAndReceive(JSONRPCRequestObject request) throws SaploClientException {
 		logger.debug(">>>>>>Sending request: " + request);
 		JSONRPCResponseObject response = (JSONRPCResponseObject)session.sendAndReceive(request);
 		logger.debug("<<<<<<Got response: " + response);
 		return response;
+	}
+	
+	/**
+	 * An Async version of {@link #sendAndReceive(JSONRPCRequestObject)}
+	 * 
+	 * @param request
+	 * @return
+	 */
+	public SaploFuture<JSONRPCResponseObject> sendAndReceiveAsync(final JSONRPCRequestObject request) {
+		return new SaploFuture<JSONRPCResponseObject>(es.submit(new Callable<JSONRPCResponseObject>() {
+			public JSONRPCResponseObject call() throws SaploClientException {
+				return sendAndReceive(request);
+			}
+		}));
+	}
+	
+	/**
+	 * Get the executor service to execute async tasks by managers
+	 * 
+	 * @return es
+	 */
+	public ExecutorService getAsyncExecutor() {
+		return es;
 	}
 
 	/**
@@ -322,7 +354,7 @@ public class SaploClient implements Serializable {
 	/*
 	 * process an error, or rather throw one
 	 */
-	protected void processException(JSONRPCErrorObject error)
+	private void processException(JSONRPCErrorObject error)
 			throws SaploClientException {
 		if(error.getClientException().getErrorCode() == ResponseCodes.CODE_ERR_NOSESSION
 				|| error.getClientException().getErrorCode() == ResponseCodes.CODE_API_DOWN_EXCEPTION) {

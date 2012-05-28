@@ -3,18 +3,18 @@
  */
 package com.saplo.api.client.manager;
 
+import static com.saplo.api.client.ResponseCodes.*;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.saplo.api.client.ResponseCodes;
 import com.saplo.api.client.SaploClient;
 import com.saplo.api.client.SaploClientException;
 import com.saplo.api.client.entity.JSONRPCRequestObject;
@@ -38,7 +38,6 @@ public class SaploTextManager {
 
 	private SaploClient client;
 	private ExecutorService es;
-	private static final int thread_count = 5;
 	private ThreadSafeSimpleDateFormat sf = new ThreadSafeSimpleDateFormat("yyyy-MM-dd HH:mm:ss");;
 
 	/**
@@ -48,7 +47,7 @@ public class SaploTextManager {
 	 */
 	public SaploTextManager(SaploClient clientToUse) {
 		this.client = clientToUse;
-		es = Executors.newFixedThreadPool(thread_count);
+		es = client.getAsyncExecutor();
 	}
 
 	/**
@@ -57,33 +56,36 @@ public class SaploTextManager {
 	 * @param saploText - the text to be added, should contain a 
 	 * {@link SaploText#getCollection()} object of type {@link SaploCollection}
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public void create(SaploText saploText) throws JSONException, SaploClientException {
+	public void create(SaploText saploText) throws SaploClientException {
 
 		verifyCollection(saploText);
 		if(ClientUtil.NULL_STRING.equals(saploText.getBody()))
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.body");
+			throw new SaploClientException(MSG_CLIENT_FIELD, CODE_CLIENT_FIELD, "text.body");
 
 		JSONObject params = new JSONObject();
-		params.put("collection_id", saploText.getCollection().getId());
-		params.put("body", saploText.getBody());
-		if(!ClientUtil.NULL_STRING.equals(saploText.getHeadline()))
-			params.put("headline", saploText.getHeadline());
-		if(saploText.getPublishDate() != null)
-			params.put("publish_date", sf.format(saploText.getPublishDate()));
-		else
-			params.put("publish_date", sf.format(new Date()));
-		if(saploText.getUrl() != null)
-			params.put("url", saploText.getUrl().toString());
-		if(!ClientUtil.NULL_STRING.equals(saploText.getAuthors()))
-			params.put("authors", saploText.getAuthors());
-		if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
-			params.put("ext_text_id", saploText.getExtId());
-		
-		params.put("force", saploText.isForce());
+		try {
+			params.put("collection_id", saploText.getCollection().getId());
+			params.put("body", saploText.getBody());
+			if(!ClientUtil.NULL_STRING.equals(saploText.getHeadline()))
+				params.put("headline", saploText.getHeadline());
+			if(saploText.getPublishDate() != null)
+				params.put("publish_date", sf.format(saploText.getPublishDate()));
+			else
+				params.put("publish_date", sf.format(new Date()));
+			if(saploText.getUrl() != null)
+				params.put("url", saploText.getUrl().toString());
+			if(!ClientUtil.NULL_STRING.equals(saploText.getAuthors()))
+				params.put("authors", saploText.getAuthors());
+			if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
+				params.put("ext_text_id", saploText.getExtId());
+
+			params.put("force", saploText.isForce());
+
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "text.create", params);
 
@@ -134,16 +136,12 @@ public class SaploTextManager {
 	public SaploFuture<Boolean> createAsync(final SaploText saploText) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					create(saploText);
-				} catch (JSONException e) {
-					return false;
-				}
+				create(saploText);
 				return true;
 			}
 		}));
 	}
-	
+
 	/**
 	 * A convenient method for adding texts with only required parameters.
 	 * 
@@ -152,16 +150,15 @@ public class SaploTextManager {
 	 * @return saploText
 	 * 
 	 * @throws SaploClientException
-	 * @throws JSONException
 	 */
-	public SaploText create(int collectionId, String bodyText) throws SaploClientException, JSONException {
+	public SaploText create(int collectionId, String bodyText) throws SaploClientException {
 		SaploCollection col = new SaploCollection();
 		col.setId(collectionId);
-		
+
 		SaploText saploText = new SaploText(col, bodyText);
-		
+
 		create(saploText);
-		
+
 		return saploText;
 	}
 
@@ -170,20 +167,23 @@ public class SaploTextManager {
 	 * 
 	 * @param saploText - a {@link SaploText} object with a mandatory id and collection parameters
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public void get(SaploText saploText) throws JSONException, SaploClientException {
-		
+	public void get(SaploText saploText) throws SaploClientException {
+
 		verifyCollection(saploText);
 		verifyId(saploText);
 
 		JSONObject params = new JSONObject();
-		params.put("collection_id", saploText.getCollection().getId());
-		if(saploText.getId() > 0)
-			params.put("text_id", saploText.getId());
-		if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
-			params.put("ext_text_id", saploText.getExtId());
+		try {
+			params.put("collection_id", saploText.getCollection().getId());
+			if(saploText.getId() > 0)
+				params.put("text_id", saploText.getId());
+			if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
+				params.put("ext_text_id", saploText.getExtId());
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "text.get", params);
 
@@ -205,11 +205,7 @@ public class SaploTextManager {
 	public SaploFuture<Boolean> getAsync(final SaploText saploText) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					get(saploText);
-				} catch (JSONException e) {
-					return false;
-				}
+				get(saploText);
 				return true;
 			}
 		}));
@@ -222,58 +218,60 @@ public class SaploTextManager {
 	 * @param textId
 	 * @return saploText
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException
 	 */
-	public SaploText get(int collectionId, int textId) throws JSONException, SaploClientException {
+	public SaploText get(int collectionId, int textId) throws SaploClientException {
 		SaploCollection col = new SaploCollection();
 		col.setId(collectionId);
-		
+
 		SaploText text = new SaploText();
 		text.setCollection(col);
 		text.setId(textId);
-		
+
 		get(text);
-		
+
 		return text;
 	}
-	
+
 	/**
 	 * Update an existing text.
 	 * 
 	 * @param saploText - the {@link SaploText} to be updated
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public void update(SaploText saploText) throws JSONException, SaploClientException {
+	public void update(SaploText saploText) throws SaploClientException {
 
 		verifyCollection(saploText);
 		verifyId(saploText);
 
 		JSONObject params = new JSONObject();
-		params.put("collection_id", saploText.getCollection().getId());
-		if(saploText.getId() > 0)
-			params.put("text_id", saploText.getId());
-		if(!ClientUtil.NULL_STRING.equals(saploText.getHeadline()))
-			params.put("headline", saploText.getHeadline());
+		try {
+			params.put("collection_id", saploText.getCollection().getId());
+			if(saploText.getId() > 0)
+				params.put("text_id", saploText.getId());
+			if(!ClientUtil.NULL_STRING.equals(saploText.getHeadline()))
+				params.put("headline", saploText.getHeadline());
 
-		if(!ClientUtil.NULL_STRING.equals(saploText.getBody()))
-			params.put("body", saploText.getBody());
+			if(!ClientUtil.NULL_STRING.equals(saploText.getBody()))
+				params.put("body", saploText.getBody());
 
-		if(null != saploText.getPublishDate())
-			params.put("publish_date", sf.format(saploText.getPublishDate()));
+			if(null != saploText.getPublishDate())
+				params.put("publish_date", sf.format(saploText.getPublishDate()));
 
-		if(null != saploText.getUrl())
-			params.put("url", saploText.getUrl().toString());
+			if(null != saploText.getUrl())
+				params.put("url", saploText.getUrl().toString());
 
-		if(!ClientUtil.NULL_STRING.equals(saploText.getAuthors()))
-			params.put("authors", saploText.getAuthors());
-		
-		if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
-			params.put("ext_text_id", saploText.getExtId());
-		
-		params.put("force", saploText.isForce());
+			if(!ClientUtil.NULL_STRING.equals(saploText.getAuthors()))
+				params.put("authors", saploText.getAuthors());
+
+			if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
+				params.put("ext_text_id", saploText.getExtId());
+
+			params.put("force", saploText.isForce());
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "text.update", params);
 
@@ -295,11 +293,7 @@ public class SaploTextManager {
 	public SaploFuture<Boolean> updateAsync(final SaploText saploText) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					update(saploText);
-				} catch (JSONException e) {
-					return false;
-				}
+				update(saploText);
 				return true;
 			}
 		}));
@@ -312,29 +306,32 @@ public class SaploTextManager {
 	 * should have id and collection attributes
 	 * @return true if success
 	 * 
-	 * @throws JSONException if failure
 	 * @throws SaploClientException 
 	 */
-	public boolean delete(SaploText saploText) throws JSONException, SaploClientException {
+	public boolean delete(SaploText saploText) throws SaploClientException {
 
 		verifyCollection(saploText);
 		verifyId(saploText);
 
 		JSONObject params = new JSONObject();
-		params.put("collection_id", saploText.getCollection().getId());
-		if(saploText.getId() > 0)
-			params.put("text_id", saploText.getId());
-		if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
-			params.put("ext_text_id", saploText.getExtId());
+		try {
+			params.put("collection_id", saploText.getCollection().getId());
+			if(saploText.getId() > 0)
+				params.put("text_id", saploText.getId());
+			if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
+				params.put("ext_text_id", saploText.getExtId());
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "text.delete", params);
 
 		JSONRPCResponseObject response = client.sendAndReceive(request);
-		
+
 		JSONObject result = (JSONObject)client.parseResponse(response);
-		
-		return result.getBoolean("success");
-		
+
+		return result.optBoolean("success", false);
+
 	}
 
 	/**
@@ -348,34 +345,29 @@ public class SaploTextManager {
 	public SaploFuture<Boolean> deleteAsync(final SaploText saploText) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					return delete(saploText);
-				} catch (JSONException e) {
-					return false;
-				}
+				return delete(saploText);
 			}
 		}));
 	}
-	
+
 	/** 
 	 * A convenient way of deleting SaploText by textId
 	 *  
 	 * @param textId
 	 * @return success?
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException
 	 */
-	public boolean delete(int collectionId, int textId) throws JSONException, SaploClientException {
-		
+	public boolean delete(int collectionId, int textId) throws SaploClientException {
+
 		SaploCollection collection = new SaploCollection();
 		collection.setId(collectionId);
-		
+
 		SaploText text = new SaploText();
 		text.setId(textId);
 		text.setCollection(collection);
-		
-		
+
+
 		return delete(text);
 	}
 
@@ -388,10 +380,9 @@ public class SaploTextManager {
 	 * @param skipCategorization
 	 * @return tagList - a {@link List} containing all the tags extracted
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public List<SaploTag> tags(SaploText saploText, int wait, boolean skipCategorization) throws JSONException, SaploClientException {
+	public List<SaploTag> tags(SaploText saploText, int wait, boolean skipCategorization) throws SaploClientException {
 
 		List<SaploTag> tagList = new ArrayList<SaploTag>();
 
@@ -399,15 +390,19 @@ public class SaploTextManager {
 		verifyId(saploText);
 
 		JSONObject params = new JSONObject();
-		params.put("collection_id", saploText.getCollection().getId());
-		if(saploText.getId() > 0)
-			params.put("text_id", saploText.getId());
-		if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
-			params.put("ext_text_id", saploText.getExtId());
+		try {
+			params.put("collection_id", saploText.getCollection().getId());
+			if(saploText.getId() > 0)
+				params.put("text_id", saploText.getId());
+			if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
+				params.put("ext_text_id", saploText.getExtId());
 
-		if(wait >= 0)
-			params.put("wait", wait);
-		params.put("skip_categorization", skipCategorization);
+			if(wait >= 0)
+				params.put("wait", wait);
+			params.put("skip_categorization", skipCategorization);
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "text.tags", params);
 
@@ -415,12 +410,17 @@ public class SaploTextManager {
 
 		JSONObject rawResult = (JSONObject)client.parseResponse(response);
 
-		JSONArray tags = rawResult.getJSONArray("tags");
-		for(int i = 0; i < tags.length(); i++) {
-			JSONObject tagJson = tags.getJSONObject(i);
-			SaploTag saploTag = SaploTag.convertFromJSONToTag(tagJson);
-			tagList.add(saploTag);
+		try {
+			JSONArray tags = rawResult.getJSONArray("tags");
+			for(int i = 0; i < tags.length(); i++) {
+				JSONObject tagJson = tags.getJSONObject(i);
+				SaploTag saploTag = SaploTag.convertFromJSONToTag(tagJson);
+				tagList.add(saploTag);
+			}
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_MALFORMED_RESPONSE, je);
 		}
+
 		return tagList;
 	}
 
@@ -437,17 +437,11 @@ public class SaploTextManager {
 	public SaploFuture<List<SaploTag>> tagsAsync(final SaploText saploText, final int wait, final boolean skipCategorization) {
 		return new SaploFuture<List<SaploTag>>( es.submit(new Callable<List<SaploTag>>() {
 			public List<SaploTag> call() throws SaploClientException {
-				List<SaploTag> tagList = null;
-				try {
-					tagList = tags(saploText, wait, skipCategorization);
-				} catch (JSONException e) {
-					return null;
-				}
-				return tagList;
+				return tags(saploText, wait, skipCategorization);
 			}
 		}));
 	}
-	
+
 	/**
 	 * Get all entity tags that exist in the text. 
 	 * Categorized as person, organization, location, url, unknown.
@@ -455,10 +449,9 @@ public class SaploTextManager {
 	 * @param saploText - the text to extract the {@link SaploTag}s from
 	 * @return tagList - a {@link List} containing all the tags extracted
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public List<SaploTag> tags(SaploText saploText) throws JSONException, SaploClientException {
+	public List<SaploTag> tags(SaploText saploText) throws SaploClientException {
 		return tags(saploText, ClientUtil.NULL_INT, false);
 	}
 
@@ -491,18 +484,11 @@ public class SaploTextManager {
 	 * 
 	 * @param text - the text to extract the {@link SaploTag}s from
 	 * @return {@link SaploFuture}<{@link List}<{@link SaploTag}>> containing all the tags extracted
-	 * @throws
 	 */
 	public SaploFuture<List<SaploTag>> tagsAsync(final SaploText saploText) {
 		return new SaploFuture<List<SaploTag>>( es.submit(new Callable<List<SaploTag>>() {
 			public List<SaploTag> call() throws SaploClientException {
-				List<SaploTag> tagList = null;
-				try {
-					tagList = tags(saploText);
-				} catch (JSONException e) {
-					return null;
-				}
-				return tagList;
+				return tags(saploText);
 			}
 		}));
 	}
@@ -514,17 +500,16 @@ public class SaploTextManager {
 	 * @param textId
 	 * @return list
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException
 	 */
-	public List<SaploTag> tags(int collectionId, int textId) throws JSONException, SaploClientException {
+	public List<SaploTag> tags(int collectionId, int textId) throws SaploClientException {
 		SaploCollection col = new SaploCollection();
 		col.setId(collectionId);
-		
+
 		SaploText text = new SaploText();
 		text.setCollection(col);
 		text.setId(textId);
-		
+
 		return tags(text); 
 	}
 
@@ -544,12 +529,11 @@ public class SaploTextManager {
 	 * @param maxThreshold - the maximum similarity threshold, between 0 and 1 (1 = 100% similar)
 	 * @return relatedTextsList - a {@link List} containing related texts to the given text
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
 	public void relatedTexts(SaploText saploText, RelatedBy relatedBy, 
 			SaploCollection[] collectionScope, int wait, int limit, 
-			double minThreshold, double maxThreshold) throws JSONException, SaploClientException {
+			double minThreshold, double maxThreshold) throws SaploClientException {
 
 		verifyCollection(saploText);
 		verifyId(saploText);
@@ -557,32 +541,37 @@ public class SaploTextManager {
 		List<SaploText> relatedTextsList = new ArrayList<SaploText>();
 
 		JSONObject params = new JSONObject();
-		params.put("collection_id", saploText.getCollection().getId());
-		if(saploText.getId() > 0)
-			params.put("text_id", saploText.getId());
-		if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
-			params.put("ext_text_id", saploText.getExtId());
-		if(relatedBy != null)
-			params.put("related_by", relatedBy);
-		
-		JSONArray collectionIds = new JSONArray();
-		if(collectionScope != null && collectionScope.length > 0) {
-			for(int i = 0; i < collectionScope.length; i++) {
-				collectionIds.put(collectionScope[i].getId());
-			}
-		} else {
-			collectionIds.put(saploText.getCollection().getId());
-		}
-		params.put("collection_scope", collectionIds);
+		try {
+			params.put("collection_id", saploText.getCollection().getId());
+			if(saploText.getId() > 0)
+				params.put("text_id", saploText.getId());
+			if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
+				params.put("ext_text_id", saploText.getExtId());
+			if(relatedBy != null)
+				params.put("related_by", relatedBy);
 
-		if(wait >= 0)
-			params.put("wait", wait);
-		if(limit > 0)
-			params.put("limit", limit);
-		if(minThreshold >= 0 && minThreshold <= 1)
-			params.put("min_threshold", minThreshold);
-		if(maxThreshold >= 0 && minThreshold <= 1)
-			params.put("max_threshold", maxThreshold);
+			JSONArray collectionIds = new JSONArray();
+			if(collectionScope != null && collectionScope.length > 0) {
+				for(int i = 0; i < collectionScope.length; i++) {
+					collectionIds.put(collectionScope[i].getId());
+				}
+			} else {
+				collectionIds.put(saploText.getCollection().getId());
+			}
+			params.put("collection_scope", collectionIds);
+
+			if(wait >= 0)
+				params.put("wait", wait);
+			if(limit > 0)
+				params.put("limit", limit);
+			if(minThreshold >= 0 && minThreshold <= 1)
+				params.put("min_threshold", minThreshold);
+			if(maxThreshold >= 0 && minThreshold <= 1)
+				params.put("max_threshold", maxThreshold);
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
+
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "text.relatedTexts", params);
 
@@ -590,13 +579,18 @@ public class SaploTextManager {
 
 		JSONObject rawResult = (JSONObject)client.parseResponse(response);
 
-		JSONArray texts = rawResult.getJSONArray("related_texts");
-		for(int i = 0; i < texts.length(); i++) {
-			JSONObject textJson = texts.getJSONObject(i);
-			SaploText relText = SaploText.convertFromJSONToText(textJson);
-			relText.setRelatedToText(saploText);
-			relatedTextsList.add(relText);
+		try {
+			JSONArray texts = rawResult.getJSONArray("related_texts");
+			for(int i = 0; i < texts.length(); i++) {
+				JSONObject textJson = texts.getJSONObject(i);
+				SaploText relText = SaploText.convertFromJSONToText(textJson);
+				relText.setRelatedToText(saploText);
+				relatedTextsList.add(relText);
+			}
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_MALFORMED_RESPONSE, je);
 		}
+
 		saploText.setRelatedTexts(relatedTextsList);
 		//		return relatedTextsList;
 	}
@@ -651,11 +645,7 @@ public class SaploTextManager {
 			final double minThreshold, final double maxThreshold) {
 		return new SaploFuture<Boolean>( es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					relatedTexts(saploText, relatedBy, collectionScope, wait, limit, minThreshold, maxThreshold);
-				} catch (JSONException e) {
-					return false;
-				}
+				relatedTexts(saploText, relatedBy, collectionScope, wait, limit, minThreshold, maxThreshold);
 				return true;
 			}
 		}));
@@ -668,10 +658,9 @@ public class SaploTextManager {
 	 * @param saploText - the {@link SaploText} object to compare to
 	 * @return relatedTextsList - a {@link List} containing related texts to the given text
 	 * 
-	 * @throws JSONException 
 	 * @throws SaploClientException 
 	 */
-	public void relatedTexts(SaploText saploText) throws JSONException, SaploClientException {
+	public void relatedTexts(SaploText saploText) throws SaploClientException {
 		relatedTexts(saploText, null, null, -1, -1, -1, -1);
 	}
 
@@ -688,16 +677,12 @@ public class SaploTextManager {
 	public SaploFuture<Boolean> relatedTextsAsync(final SaploText saploText) {
 		return new SaploFuture<Boolean>( es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					relatedTexts(saploText);
-				} catch (JSONException e) {
-					return false;
-				}
+				relatedTexts(saploText);
 				return true;
 			}
 		}));
 	}
-	
+
 	/**
 	 * Search for groups that are related to a given text.
 	 *  
@@ -709,12 +694,11 @@ public class SaploTextManager {
 	 * @param limit - set max number of results.
 	 * @return relatedGroupsList - a {@link List} containing related texts to the given group(s)
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
 	public void relatedGroups(SaploText saploText, 
 			SaploGroup[] groupScope, int wait, double minThreshold, 
-			double maxThreshold, int limit) throws JSONException, SaploClientException {
+			double maxThreshold, int limit) throws SaploClientException {
 
 		verifyCollection(saploText);
 		verifyId(saploText);
@@ -722,28 +706,32 @@ public class SaploTextManager {
 		List<SaploGroup> relatedGroupsList = new ArrayList<SaploGroup>();
 
 		JSONObject params = new JSONObject();
-		params.put("collection_id", saploText.getCollection().getId());
-		if(saploText.getId() > 0)
-			params.put("text_id", saploText.getId());
-		if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
-			params.put("ext_text_id", saploText.getExtId());
+		try {
+			params.put("collection_id", saploText.getCollection().getId());
+			if(saploText.getId() > 0)
+				params.put("text_id", saploText.getId());
+			if(!ClientUtil.NULL_STRING.equals(saploText.getExtId()))
+				params.put("ext_text_id", saploText.getExtId());
 
-		if(groupScope != null && groupScope.length > 0) {
-			JSONArray groupIds = new JSONArray();
-			for(int i = 0; i < groupScope.length; i++) {
-				groupIds.put(groupScope[i].getId());
+			if(groupScope != null && groupScope.length > 0) {
+				JSONArray groupIds = new JSONArray();
+				for(int i = 0; i < groupScope.length; i++) {
+					groupIds.put(groupScope[i].getId());
+				}
+				params.put("group_scope", groupIds);
 			}
-			params.put("group_scope", groupIds);
+
+			if(wait >= 0)
+				params.put("wait", wait);
+			if(minThreshold >= 0 && minThreshold <= 1)
+				params.put("min_threshold", minThreshold);
+			if(maxThreshold >= 0 && minThreshold <= 1)
+				params.put("max_threshold", maxThreshold);
+			if(limit > 0)
+				params.put("limit", limit);
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
 		}
-		
-		if(wait >= 0)
-			params.put("wait", wait);
-		if(minThreshold >= 0 && minThreshold <= 1)
-			params.put("min_threshold", minThreshold);
-		if(maxThreshold >= 0 && minThreshold <= 1)
-			params.put("max_threshold", maxThreshold);
-		if(limit > 0)
-			params.put("limit", limit);
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "text.relatedGroups", params);
 
@@ -751,13 +739,18 @@ public class SaploTextManager {
 
 		JSONObject rawResult = (JSONObject)client.parseResponse(response);
 
-		JSONArray groups = rawResult.getJSONArray("related_groups");
-		for(int i = 0; i < groups.length(); i++) {
-			JSONObject groupJson = groups.getJSONObject(i);
-			SaploGroup relGroup = SaploGroup.convertFromJSONToGroup(groupJson);
-			relGroup.setRelatedToText(saploText);
-			relatedGroupsList.add(relGroup);
+		try {
+			JSONArray groups = rawResult.getJSONArray("related_groups");
+			for(int i = 0; i < groups.length(); i++) {
+				JSONObject groupJson = groups.getJSONObject(i);
+				SaploGroup relGroup = SaploGroup.convertFromJSONToGroup(groupJson);
+				relGroup.setRelatedToText(saploText);
+				relatedGroupsList.add(relGroup);
+			}
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_MALFORMED_RESPONSE, je);
 		}
+
 		saploText.setRelatedGroups(relatedGroupsList);
 		//		return relatedGroupsList;
 	}
@@ -782,11 +775,7 @@ public class SaploTextManager {
 			final double maxThreshold, final int limit) {
 		return new SaploFuture<Boolean>( es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					relatedGroups(saploText, groupScope, wait, minThreshold, maxThreshold, limit);
-				} catch (JSONException e) {
-					return false;
-				}
+				relatedGroups(saploText, groupScope, wait, minThreshold, maxThreshold, limit);
 				return true;
 			}
 		}));
@@ -798,10 +787,9 @@ public class SaploTextManager {
 	 * @param saploText - the {@link SaploText} object to compare to
 	 * @return relatedGroupsList - a {@link List} containing related texts to the given group(s)
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public void relatedGroups(SaploText saploText) throws JSONException, SaploClientException {
+	public void relatedGroups(SaploText saploText) throws SaploClientException {
 		relatedGroups(saploText, null, -1, -1, -1, -1);
 	}
 
@@ -818,16 +806,12 @@ public class SaploTextManager {
 	public SaploFuture<Boolean> relatedGroupsAsync(final SaploText saploText) {
 		return new SaploFuture<Boolean>( es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					relatedGroups(saploText);
-				} catch (JSONException e) {
-					return false;
-				}
+				relatedGroups(saploText);
 				return true;
 			}
 		}));
 	}
-	
+
 	/**
 	 * Give feedback by adding a tag to a text.
 	 * 
@@ -836,13 +820,13 @@ public class SaploTextManager {
 	 * @return tag - newly added tag returned by the API
 	 * 
 	 * @throws SaploClientException
-	 * @throws JSONException
 	 */
-	public SaploTag addTag(SaploText saploText, SaploTag saploTag) throws SaploClientException, JSONException {
+	public SaploTag addTag(SaploText saploText, SaploTag saploTag) throws SaploClientException {
 		verifyCollection(saploText);
 		verifyId(saploText);
 
 		JSONObject params = new JSONObject();
+		try {
 		params.put("collection_id", saploText.getCollection().getId());
 		if(saploText.getId() > 0)
 			params.put("text_id", saploText.getId());
@@ -854,17 +838,20 @@ public class SaploTextManager {
 		}
 		params.put("category", saploTag.getCategory().toString().toLowerCase());
 		params.put("relevance", saploTag.getRelevance());
-		
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
+
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "text.addTag", params);
 
 		JSONRPCResponseObject response = client.sendAndReceive(request);
 
 		JSONObject rawResult = (JSONObject)client.parseResponse(response);
-		
+
 		return SaploTag.convertFromJSONToTag(rawResult);
 
 	}
-	
+
 	/**
 	 * Create a new text for a given collection id with a given text_id
 	 * 
@@ -875,30 +862,28 @@ public class SaploTextManager {
 	public static SaploText getTextObject(int collectionId, int textId) {
 		SaploCollection col = new SaploCollection();
 		col.setId(collectionId);
-		
+
 		SaploText text = new SaploText();
 		text.setCollection(col);
 		text.setId(textId);
-		
+
 		return text;
 	}
-	
+
 	/*
 	 * ensure the given text has collection_id
 	 */
 	private static void verifyCollection(SaploText saploText) throws SaploClientException {
 		if(saploText.getCollection() == null || saploText.getCollection().getId() <= 0)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.collection", "text.collection.id");
+			throw new SaploClientException(MSG_CLIENT_FIELD, CODE_CLIENT_FIELD, "text.collection", "text.collection.id");
 	}
-	
+
 	/*
 	 * ensure the given text has at least one of the text ids
 	 */
 	private static void verifyId(SaploText saploText) throws SaploClientException {
 		if(saploText.getId() <= 0 && ClientUtil.NULL_STRING.equals(saploText.getExtId()))
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.id OR text.ext_id");
+			throw new SaploClientException(MSG_CLIENT_FIELD, CODE_CLIENT_FIELD, "text.id OR text.ext_id");
 	}
-	
+
 }

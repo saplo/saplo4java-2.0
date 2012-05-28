@@ -9,7 +9,6 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.saplo.api.client.util.ClientUtil;
@@ -323,42 +322,37 @@ public class SaploText {
 	 * 
 	 * @param json - the {@link JSONObject} to parse
 	 * @param saploText - the {@link SaploText} object to write the convertion results to
-	 * 
-	 * @throws JSONException
 	 */
-	public static void convertFromJSONToText(JSONObject json, SaploText saploText) throws JSONException {
+	public static void convertFromJSONToText(JSONObject json, SaploText saploText) {
 		
-		if(json.has("text_id"))
-			saploText.setId(json.getInt("text_id"));
+		saploText.setId(json.optInt("text_id", -1));
 		if(json.has("headline"))
-			saploText.setHeadline(json.getString("headline"));
+			saploText.setHeadline(json.optString("headline"));
 		if(json.has("body"))
-			saploText.setBody(json.getString("body"));
+			saploText.setBody(json.optString("body"));
 		if(json.has("publish_date"))
 			try {
-				saploText.setPublishDate(sf.parse(json.getString("publish_date")));
+				saploText.setPublishDate(sf.parse(json.optString("publish_date")));
 			} catch (ParseException e) {
-				//
-			} catch (NumberFormatException e) {
 				//
 			}
 		if(json.has("url"))
 			try {
-				saploText.setUrl(new URI(json.getString("url")));
+				saploText.setUrl(new URI(json.optString("url")));
 			} catch (URISyntaxException e) {
 				//
 			}
 		if(json.has("authors"))
-			saploText.setAuthors(json.getString("authors"));
+			saploText.setAuthors(json.optString("authors"));
 		if(json.has("collection_id")) {
 			SaploCollection saploCollection = new SaploCollection();
-			saploCollection.setId(json.getInt("collection_id"));
+			saploCollection.setId(json.optInt("collection_id"));
 			saploText.setCollection(saploCollection);
 		}
 		if(json.has("ext_text_id"))
-			saploText.setExtId(json.getString("ext_text_id"));
+			saploText.setExtId(json.optString("ext_text_id"));
 		if(json.has("relevance"))
-			saploText.setRelatedRelevance(json.getDouble("relevance"));
+			saploText.setRelatedRelevance(json.optDouble("relevance"));
 	}
 	
 	/**
@@ -366,10 +360,8 @@ public class SaploText {
 	 *  
 	 * @param json - the {@link JSONObject} to convert
 	 * @return text - the {@link SaploText} representation of the json object
-	 * 
-	 * @throws JSONException
 	 */
-	public static SaploText convertFromJSONToText(JSONObject json) throws JSONException {
+	public static SaploText convertFromJSONToText(JSONObject json) {
 		SaploText saploText = new SaploText();
 		convertFromJSONToText(json, saploText);
 		return saploText;

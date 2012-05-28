@@ -17,12 +17,17 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.params.ConnRoutePNames;
+import org.apache.http.conn.routing.HttpRoute;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.protocol.HTTP;
+import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -44,78 +49,129 @@ import com.saplo.api.client.session.TransportRegistry.SessionFactory;
  */
 public class HTTPSessionApache implements Session {
 
-	protected URI uri;
-	protected volatile String params;
-	protected HttpHost proxy = new HttpHost("localhost");
+	private static final String encoding = "UTF-8";
+	protected URI endpoint;
+	protected String params;
+	protected HttpClient httpClient;
+	protected HttpHost proxy;
 	protected ClientProxy clientProxy;
 	protected CredentialsProvider proxyCredentials;
 
-	public HTTPSessionApache(URI uri, String params) {
-		this.uri = uri;
+	/**
+	 * Main constructor
+	 * 
+	 * @param endpoint - a saplo api endpoint
+	 * @param params - access_token="token_here"
+	 */
+	public HTTPSessionApache(URI endpoint, String params) {
+		this.endpoint = endpoint;
 		this.params = params;
+		this.proxy = new HttpHost("localhost");
+		init();
 	}
-	
+
 	public HTTPSessionApache(URI uri, String params, ClientProxy clientProxy) {
 		this(uri, params);
 		this.setProxy(clientProxy);
 	}
 
+	/*
+	 * Initialize the httpClient with a pooled connection manager
+	 */
+	protected void init() {
+
+		PoolingClientConnectionManager cm = new PoolingClientConnectionManager(registerScheme());
+		
+		// increase max total connection
+		cm.setMaxTotal(30);
+		// increase max connections for our endpoint
+		HttpHost saploHost = new HttpHost(endpoint.getHost(), (endpoint.getPort() > 0 ? endpoint.getPort() : 80));
+		cm.setMaxPerRoute(new HttpRoute(saploHost), 20);
+	
+		this.httpClient = new DefaultHttpClient(cm);
+	}
+	
+	/*
+	 * This method will be overridden by the SSL implementation to register an SSL socket factory
+	 */
+	protected SchemeRegistry registerScheme() {
+		SchemeRegistry schemeRegistry = new SchemeRegistry();
+		schemeRegistry.register(
+				new Scheme("http", (endpoint.getPort() > 0 ? endpoint.getPort() : 80),
+						PlainSocketFactory.getSocketFactory()));
+		
+		return schemeRegistry;
+	}
+
+	/**
+	 * Sends a given request to the Saplo API and returns a response got from the API,
+	 * or throws a SaploClientException
+	 * 
+	 * @param message - a message to send
+	 * @return response object got back from the API
+	 * @throws SaploClientException
+	 */
 	public JSONRPCResponseObject sendAndReceive(JSONRPCRequestObject message)
-	throws JSONException, SaploClientException {
+			throws SaploClientException {
 
-		HttpPost httpost = new HttpPost(uri+"?"+params);
+		HttpPost httpost = new HttpPost(String.format("%s?%s",endpoint.toString(), params));
 
-		ByteArrayEntity ent = new ByteArrayEntity(message.toString().getBytes(Charset.forName("UTF-8")));
-		ent.setContentEncoding(HTTP.UTF_8);
+		ByteArrayEntity ent = new ByteArrayEntity(message.toString().getBytes(Charset.forName(encoding)));
+		ent.setContentEncoding(encoding);
 		ent.setContentType("application/json");
 		httpost.setEntity(ent);
-				
-		DefaultHttpClient httpClient = new DefaultHttpClient();
 
 		try {
-			if(clientProxy != null) {
-				if(clientProxy.isSecure()) {
-					httpClient.setCredentialsProvider(proxyCredentials);
-				}
-				
-				httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
-			}
-			
+			// the main call that sends the request to the client
 			HttpResponse response = httpClient.execute(httpost);
 			HttpEntity entity = response.getEntity();
 			int statusCode = response.getStatusLine().getStatusCode();
 
-			if (statusCode != HttpStatus.SC_OK)
+			// first we "consume" the entity so that the connection is returned to the pool
+			String responseStr = "";
+			if (entity != null) {
+				responseStr = EntityUtils.toString(entity, "UTF-8");
+			}
+			
+			if (statusCode != HttpStatus.SC_OK) {
 				// probably the API is down..
 				throw new SaploClientException(ResponseCodes.MSG_API_DOWN_EXCEPTION, ResponseCodes.CODE_API_DOWN_EXCEPTION, statusCode);
-
-			String got = "";
-			if (entity != null) {
-				byte[] bytes = EntityUtils.toByteArray(entity);
-				got = new String(bytes, Charset.forName("UTF-8"));
 			}
-
-			JSONTokener tokener = new JSONTokener(got);
-			Object rawResponseMessage = tokener.nextValue();
-			JSONObject responseMessage = (JSONObject) rawResponseMessage;
-			if (responseMessage == null)
-				throw new ClientError("Invalid response type - " + rawResponseMessage);
-			return new JSONRPCResponseObject(responseMessage);
+			
+			return processResponse(responseStr);
 
 		} catch (ClientProtocolException e) {
+			httpost.abort();
 			throw new ClientError(e);
 		} catch (NoHttpResponseException nr) {
 			// TODO what code to send here? 404? for now, just send 777 
 			// cause 404 is thrown when response.getStatusLine().getStatusCode() == 404 above
 			throw new SaploClientException(ResponseCodes.MSG_API_DOWN_EXCEPTION, ResponseCodes.CODE_API_DOWN_EXCEPTION, 777);
 		} catch (IOException e) {
-			throw new ClientError(e);
-		} finally {
-			httpClient.getConnectionManager().shutdown();
+			httpost.abort();
+			throw new SaploClientException(e);
 		}
 	}
 
-	public void setParams(String params) {
+	/*
+	 * parse the response string received from the API
+	 */
+	private JSONRPCResponseObject processResponse(String response) throws SaploClientException {
+		JSONTokener tokener = new JSONTokener(response);
+		Object rawResponseMessage;
+		try {
+			rawResponseMessage = tokener.nextValue();
+		} catch (JSONException e) {
+			throw new SaploClientException(ResponseCodes.MSG_MALFORMED_RESPONSE, ResponseCodes.CODE_MALFORMED_RESPONSE);
+		}
+		JSONObject responseMessage = (JSONObject) rawResponseMessage;
+		if (null == responseMessage)
+			throw new SaploClientException("Got invalid response type - " + rawResponseMessage);
+		
+		return new JSONRPCResponseObject(responseMessage);
+	}
+	
+	public synchronized void setParams(String params) {
 		this.params = params;
 	}
 
@@ -124,21 +180,28 @@ public class HTTPSessionApache implements Session {
 	 * 
 	 * @param proxy
 	 */
-	public void setProxy(ClientProxy clientProxy) {
-		this.clientProxy = clientProxy;
+	public void setProxy(ClientProxy proxy) {
+		if(null == proxy)
+			return;
+		
+		this.clientProxy = proxy;
 		this.proxy = new HttpHost(clientProxy.getHost(), clientProxy.getPort());
 		if(clientProxy.isSecure()) {
-			this.proxyCredentials = new BasicCredentialsProvider();
-			this.proxyCredentials.setCredentials(
+			proxyCredentials = new BasicCredentialsProvider();
+			proxyCredentials.setCredentials(
 					new AuthScope(clientProxy.getHost(), clientProxy.getPort()),
 					new UsernamePasswordCredentials(clientProxy.getUsername(), clientProxy.getPassword()));
+			((DefaultHttpClient)httpClient).setCredentialsProvider(proxyCredentials);
 		}
+		
+		httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
 	}
-	
+
 	/**
 	 * Close all the clients and clear the pool.
 	 */
 	public synchronized void close() {
+		httpClient.getConnectionManager().shutdown();
 	}
 
 	static class SessionFactoryImpl implements SessionFactory {

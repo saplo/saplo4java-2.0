@@ -3,7 +3,6 @@
  */
 package com.saplo.api.client.entity;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -26,10 +25,8 @@ public class JSONRPCResponseObject {
 	 * 
 	 * @param response - a JSON-RPC response object, MUST have a "result"
 	 *  parameter on SUCCESS or "error" on FAILURE
-	 *  
-	 * @throws JSONException
 	 */
-	public JSONRPCResponseObject(JSONObject response) throws JSONException {
+	public JSONRPCResponseObject(JSONObject response) {
 		if(response.has("result")) {
 			result = response.opt("result");
 			success = true;
@@ -91,10 +88,10 @@ public class JSONRPCResponseObject {
 	/*
 	 * tries to parse an error object in a given response object 
 	 */
-	private JSONRPCErrorObject handleError(JSONObject response) throws JSONException {
+	private JSONRPCErrorObject handleError(JSONObject response) {
 		JSONObject err;
 		if(response.has("error")) {
-			err = response.getJSONObject("error");
+			err = response.optJSONObject("error");
 			return new JSONRPCErrorObject(err);
 		}
 		return null;

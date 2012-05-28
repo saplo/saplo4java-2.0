@@ -6,7 +6,6 @@ package com.saplo.api.client.entity;
 import java.text.ParseException;
 import java.util.Date;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.saplo.api.client.util.ThreadSafeSimpleDateFormat;
@@ -148,39 +147,37 @@ public class SaploAccount {
 	 * 
 	 * @param json - the {@link JSONObject} to parse
 	 * @param saploAccount - the {@link SaploAccount} object to write the convertion results to
-	 * 
-	 * @throws JSONException
 	 */
-	public static void convertFromJSONToAccount(JSONObject json, SaploAccount saploAccount) throws JSONException {
+	public static void convertFromJSONToAccount(JSONObject json, SaploAccount saploAccount) {
 		
 		if(json.has("account_id"))
-			saploAccount.setId(json.getInt("account_id"));
+			saploAccount.setId(json.optInt("account_id"));
 		if(json.has("expiration_date"))
 			try {
-				saploAccount.setExpirationDate(sf.parse(json.getString("expiration_date")));
+				saploAccount.setExpirationDate(sf.parse(json.optString("expiration_date")));
 			} catch (ParseException e) {
 				//
 			}
 		if(json.has("api_calls")) {
-			JSONObject apiCallsJson = json.getJSONObject("api_calls");
+			JSONObject apiCallsJson = json.optJSONObject("api_calls");
 			ApiCalls apiCalls = new ApiCalls();
 			if(apiCallsJson.has("left_month"))
-				apiCalls.setLeftMonth(apiCallsJson.getInt("left_month"));
+				apiCalls.setLeftMonth(apiCallsJson.optInt("left_month"));
 			if(apiCallsJson.has("left_hour"))
-				apiCalls.setLeftHour(apiCallsJson.getInt("left_hour"));
+				apiCalls.setLeftHour(apiCallsJson.optInt("left_hour"));
 			if(apiCallsJson.has("limit_month"))
-				apiCalls.setLimitMonth(apiCallsJson.getInt("limit_month"));
+				apiCalls.setLimitMonth(apiCallsJson.optInt("limit_month"));
 			if(apiCallsJson.has("limit_hour"))
-				apiCalls.setLimitHour(apiCallsJson.getInt("limit_hour"));
+				apiCalls.setLimitHour(apiCallsJson.optInt("limit_hour"));
 			if(apiCallsJson.has("reset_hour"))
 				try {
-					apiCalls.setResetHour(sf.parse(apiCallsJson.getString("reset_hour")));
+					apiCalls.setResetHour(sf.parse(apiCallsJson.optString("reset_hour")));
 				} catch (ParseException e) {
 					//
 				}
 				if(apiCallsJson.has("reset_month"))
 					try {
-						apiCalls.setResetMonth(sf.parse(apiCallsJson.getString("reset_month")));
+						apiCalls.setResetMonth(sf.parse(apiCallsJson.optString("reset_month")));
 					} catch (ParseException e) {
 						//
 					}
@@ -188,16 +185,16 @@ public class SaploAccount {
 			saploAccount.setApiCalls(apiCalls);
 		}
 		if(json.has("collections")) {
-			if(json.getJSONObject("collections").has("limit"))
-				saploAccount.setCollectionsLimit(json.getJSONObject("collections").getInt("limit"));
-			if(json.getJSONObject("collections").has("left"))
-				saploAccount.setCollectionsLeft(json.getJSONObject("collections").getInt("left"));
+			if(json.optJSONObject("collections").has("limit"))
+				saploAccount.setCollectionsLimit(json.optJSONObject("collections").optInt("limit"));
+			if(json.optJSONObject("collections").has("left"))
+				saploAccount.setCollectionsLeft(json.optJSONObject("collections").optInt("left"));
 		}
 		if(json.has("groups")) {
-			if(json.getJSONObject("groups").has("limit"))
-				saploAccount.setGroupLimit(json.getJSONObject("groups").getInt("limit"));
-			if(json.getJSONObject("groups").has("left"))
-				saploAccount.setGroupLeft(json.getJSONObject("groups").getInt("left"));
+			if(json.optJSONObject("groups").has("limit"))
+				saploAccount.setGroupLimit(json.optJSONObject("groups").optInt("limit"));
+			if(json.optJSONObject("groups").has("left"))
+				saploAccount.setGroupLeft(json.optJSONObject("groups").optInt("left"));
 		}
 	}
 	
@@ -206,10 +203,8 @@ public class SaploAccount {
 	 * 
 	 * @param json - the {@link JSONObject} to convert
 	 * @return account - the {@link SaploAccount} representation of the json object
-	 * 
-	 * @throws JSONException
 	 */
-	public static SaploAccount convertFromJSONToAccount(JSONObject json) throws JSONException {
+	public static SaploAccount convertFromJSONToAccount(JSONObject json) {
 		SaploAccount saploAccount = new SaploAccount();
 		convertFromJSONToAccount(json, saploAccount);
 		return saploAccount;
