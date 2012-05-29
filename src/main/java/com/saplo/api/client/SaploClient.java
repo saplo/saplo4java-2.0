@@ -282,6 +282,8 @@ public class SaploClient implements Serializable {
 		else
 			HTTPSessionApache.deregister(TransportRegistry.getTransportRegistryInstance());
 
+		es.shutdownNow();
+		
 		return true;
 	}
 
