@@ -83,10 +83,11 @@ public class HTTPSessionApache implements Session {
 		PoolingClientConnectionManager cm = new PoolingClientConnectionManager(registerScheme());
 		
 		// increase max total connection
-		cm.setMaxTotal(30);
+		cm.setMaxTotal(50);
+		cm.setDefaultMaxPerRoute(15);
 		// increase max connections for our endpoint
 		HttpHost saploHost = new HttpHost(endpoint.getHost(), (endpoint.getPort() > 0 ? endpoint.getPort() : 80));
-		cm.setMaxPerRoute(new HttpRoute(saploHost), 20);
+		cm.setMaxPerRoute(new HttpRoute(saploHost), 40);
 	
 		this.httpClient = new DefaultHttpClient(cm);
 	}
