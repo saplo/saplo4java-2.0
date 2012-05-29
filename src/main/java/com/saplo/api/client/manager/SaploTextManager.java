@@ -38,7 +38,7 @@ public class SaploTextManager {
 
 	private SaploClient client;
 	private ExecutorService es;
-	private ThreadSafeSimpleDateFormat sf = new ThreadSafeSimpleDateFormat("yyyy-MM-dd HH:mm:ss");;
+	private ThreadSafeSimpleDateFormat sf = new ThreadSafeSimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
 	/**
 	 * A simple constructor 

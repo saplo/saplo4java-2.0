@@ -73,14 +73,20 @@ public class SaploClient implements Serializable {
 		}
 		
 		public Builder endpoint(String endpoint)
-		{ this.endpoint = endpoint;	return this; }
+		{ this.endpoint = endpoint;	
+		if(this.endpoint.startsWith("https://"))
+			this.ssl = true;
+		return this; }
+		
 		public Builder ssl(boolean ssl)
 		{ this.ssl = ssl;
-		if(this.endpoint.equals(DEFAULT_ENDPOINT))
+		if(this.ssl && this.endpoint.equals(DEFAULT_ENDPOINT))
 			this.endpoint = DEFAULT_SSL_ENDPOINT;
 		return this; }
+		
 		public Builder accessToken(String accessToken)
 		{ this.accessToken = accessToken;	return this; }
+		
 		public Builder proxy(ClientProxy proxy)
 		{ this.proxy = proxy;	return this; }
 		

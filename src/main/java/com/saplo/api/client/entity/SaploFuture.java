@@ -3,12 +3,16 @@
  */
 package com.saplo.api.client.entity;
 
+import static com.saplo.api.client.ResponseCodes.CODE_STILL_PROCESSING;
+import static com.saplo.api.client.ResponseCodes.CODE_UNKNOWN_EXCEPTION;
+import static com.saplo.api.client.ResponseCodes.MSG_STILL_PROCESSING;
+import static com.saplo.api.client.ResponseCodes.MSG_UNKNOWN_EXCEPTION;
+
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import com.saplo.api.client.ResponseCodes;
 import com.saplo.api.client.SaploClientException;
 
 /**
@@ -37,9 +41,9 @@ public class SaploFuture<V> {
 			if(ee.getCause() instanceof SaploClientException)
 				throw (SaploClientException)ee.getCause();
 			else
-				throw new SaploClientException(ResponseCodes.MSG_UNKNOWN_EXCEPTION, ResponseCodes.CODE_UNKNOWN_EXCEPTION, ee);
+				throw new SaploClientException(MSG_UNKNOWN_EXCEPTION, CODE_UNKNOWN_EXCEPTION, ee);
 		} catch (InterruptedException ie) {
-			throw new SaploClientException(ResponseCodes.MSG_UNKNOWN_EXCEPTION, ResponseCodes.CODE_UNKNOWN_EXCEPTION, ie);
+			throw new SaploClientException(MSG_UNKNOWN_EXCEPTION, CODE_UNKNOWN_EXCEPTION, ie);
 		}
 	}
 	
@@ -58,11 +62,11 @@ public class SaploFuture<V> {
 			if(ee.getCause() instanceof SaploClientException)
 				throw (SaploClientException)ee.getCause();
 			else
-				throw new SaploClientException(ResponseCodes.MSG_UNKNOWN_EXCEPTION, ResponseCodes.CODE_UNKNOWN_EXCEPTION, ee);
+				throw new SaploClientException(MSG_UNKNOWN_EXCEPTION, CODE_UNKNOWN_EXCEPTION, ee);
 		} catch (InterruptedException ie) {
-			throw new SaploClientException(ResponseCodes.MSG_UNKNOWN_EXCEPTION, ResponseCodes.CODE_UNKNOWN_EXCEPTION, ie);
+			throw new SaploClientException(MSG_UNKNOWN_EXCEPTION, CODE_UNKNOWN_EXCEPTION, ie);
 		} catch (TimeoutException te) {
-			throw new SaploClientException(ResponseCodes.MSG_STILL_PROCESSING, ResponseCodes.CODE_STILL_PROCESSING, te);
+			throw new SaploClientException(MSG_STILL_PROCESSING, CODE_STILL_PROCESSING, te);
 		}
 	}
 	
