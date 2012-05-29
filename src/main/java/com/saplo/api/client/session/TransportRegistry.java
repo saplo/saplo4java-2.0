@@ -1,8 +1,12 @@
-package com.saplo.api.client;
+package com.saplo.api.client.session;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+
+import com.saplo.api.client.ClientError;
+import com.saplo.api.client.ClientProxy;
+import com.saplo.api.client.session.impl.HTTPSessionApache;
 
 /**
  * A registry of transports serving JSON-RPC-Client

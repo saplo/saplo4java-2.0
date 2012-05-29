@@ -1,12 +1,19 @@
 /**
  * 
  */
-package com.saplo.api.client;
+package com.saplo.api.client.session.impl;
 
 import java.net.URI;
 import java.util.HashMap;
 
-import com.saplo.api.client.TransportRegistry.SessionFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+
+import com.saplo.api.client.ClientProxy;
+import com.saplo.api.client.session.Session;
+import com.saplo.api.client.session.TransportRegistry;
+import com.saplo.api.client.session.TransportRegistry.SessionFactory;
 
 /**
  * @author progre55
@@ -22,6 +29,16 @@ public class HTTPSSession extends HTTPSessionApache {
 		super(uri, params, proxy);
 	}
 
+	@Override
+	protected SchemeRegistry registerScheme() {
+		SchemeRegistry schemeRegistry = new SchemeRegistry();
+		schemeRegistry.register(
+				new Scheme("https", (endpoint.getPort() > 0 ? endpoint.getPort() : 443), 
+						SSLSocketFactory.getSocketFactory()));
+		
+		return schemeRegistry;
+	}
+	
 	
 	static class SessionFactoryImpl implements SessionFactory {
 		volatile HashMap<URI, Session> sessionMap = new HashMap<URI, Session>();
@@ -32,7 +49,7 @@ public class HTTPSSession extends HTTPSessionApache {
 				synchronized (sessionMap) {
 					session = sessionMap.get(uri);
 					if(session == null) {
-						if(proxy != null)
+						if(null != proxy)
 							session = new HTTPSSession(uri, params, proxy);
 						else
 							session = new HTTPSSession(uri, params);

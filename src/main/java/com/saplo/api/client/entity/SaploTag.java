@@ -3,7 +3,6 @@
  */
 package com.saplo.api.client.entity;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.saplo.api.client.util.ClientUtil;
@@ -79,18 +78,16 @@ public class SaploTag {
 	 * 
 	 * @param json - the {@link JSONObject} to convert
 	 * @return tag - the {@link SaploTag} representation of the json object
-	 * 
-	 * @throws JSONException
 	 */
-	public static SaploTag convertFromJSONToTag(JSONObject json) throws JSONException {
+	public static SaploTag convertFromJSONToTag(JSONObject json) {
 		SaploTag saploTag = new SaploTag();
 		
 		if(json.has("tag"))
-			saploTag.setTagWord(json.getString("tag"));
+			saploTag.setTagWord(json.optString("tag"));
 		if(json.has("category"))
-			saploTag.setCategory(SaploTag.TagCategory.valueOf((json.getString("category").toUpperCase())));
+			saploTag.setCategory(SaploTag.TagCategory.valueOf((json.optString("category").toUpperCase())));
 		if(json.has("relevance"))
-			saploTag.setRelevance(json.getDouble("relevance"));
+			saploTag.setRelevance(json.optDouble("relevance"));
 
 		return saploTag;
 	}

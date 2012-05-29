@@ -3,7 +3,6 @@
  */
 package com.saplo.api.client.manager;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.saplo.api.client.SaploClient;
@@ -29,10 +28,9 @@ public class SaploAccountManager {
 	 * 
 	 * @return SaploAccount
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException
 	 */
-	public SaploAccount get() throws JSONException, SaploClientException {
+	public SaploAccount get() throws SaploClientException {
 		JSONObject params = new JSONObject();
 		
 		JSONRPCRequestObject message = new JSONRPCRequestObject(client.getNextId(), "account.get", params);

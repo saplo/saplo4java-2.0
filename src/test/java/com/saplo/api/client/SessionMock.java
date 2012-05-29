@@ -37,4 +37,7 @@ public class SessionMock {
 		String token = authMgr.accessToken("", "");
 		System.out.println(token);
 	}
+	
+	
+	// TODO srsly need to write some tests when I have time
 }

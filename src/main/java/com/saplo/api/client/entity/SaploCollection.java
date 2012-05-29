@@ -3,7 +3,6 @@
  */
 package com.saplo.api.client.entity;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.saplo.api.client.util.ClientUtil;
@@ -19,7 +18,7 @@ public class SaploCollection {
 	public enum Permission {read, write, none}
 	
 	private int id = ClientUtil.NULL_INT;
-	private String name = ClientUtil.NULL_STRING;; // required
+	private String name = ClientUtil.NULL_STRING; // required
 	private String description = ClientUtil.NULL_STRING;;
 	private Language language; // required
 	private Permission permission;
@@ -143,24 +142,22 @@ public class SaploCollection {
 	 * Update a given {@link SaploCollection} object with the given {@link JSONObject} object
 	 * 
 	 * @param json - the {@link JSONObject} to parse
-	 * @param saploCollection - the {@link SaploCollection} object to write the convertion results to
-	 * 
-	 * @throws JSONException
+	 * @param saploCollection - the {@link SaploCollection} object to write the conversion results to
 	 */
-	public static void convertFromJSONToCollection(JSONObject json, SaploCollection saploCollection) throws JSONException {
+	public static void convertFromJSONToCollection(JSONObject json, SaploCollection saploCollection) {
 		
 		if(json.has("collection_id"))
-			saploCollection.setId(json.getInt("collection_id"));
+			saploCollection.setId(json.optInt("collection_id"));
 		if(json.has("name"))
-			saploCollection.setName(json.getString("name"));
+			saploCollection.setName(json.optString("name"));
 		if(json.has("language"))
-			saploCollection.setLanguage(SaploCollection.Language.valueOf(json.getString("language")));
+			saploCollection.setLanguage(SaploCollection.Language.valueOf(json.optString("language")));
 		if(json.has("description"))
-			saploCollection.setDescription(json.getString("description"));
+			saploCollection.setDescription(json.optString("description"));
 		if(json.has("permission"))
-			saploCollection.setPermission(SaploCollection.Permission.valueOf(json.getString("permission")));
+			saploCollection.setPermission(SaploCollection.Permission.valueOf(json.optString("permission")));
 		if(json.has("next_id"))
-			saploCollection.setNextId(json.getInt("next_id"));
+			saploCollection.setNextId(json.optInt("next_id"));
 	}
 	
 	/**
@@ -168,10 +165,8 @@ public class SaploCollection {
 	 * 
 	 * @param json - the {@link JSONObject} to convert
 	 * @return collection - the {@link SaploCollection} representation of the json object
-	 * 
-	 * @throws JSONException
 	 */
-	public static SaploCollection convertFromJSONToCollection(JSONObject json) throws JSONException {
+	public static SaploCollection convertFromJSONToCollection(JSONObject json)  {
 		SaploCollection saploCollection = new SaploCollection();
 		convertFromJSONToCollection(json, saploCollection);
 		return saploCollection;

@@ -7,6 +7,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.saplo.api.client.ResponseCodes;
 import com.saplo.api.client.SaploClient;
 import com.saplo.api.client.SaploClientException;
 import com.saplo.api.client.entity.JSONRPCRequestObject;
@@ -26,12 +27,16 @@ public class SaploAuthManager {
 		this.client = clientToUse;
 	}
 	
-	public String accessToken(String apiKey, String secretKey) throws JSONException, SaploClientException {
+	public String accessToken(String apiKey, String secretKey) throws SaploClientException {
 		
 		String accessToken;
 		JSONObject params = new JSONObject();
+		try {
 		params.put("api_key", apiKey);
 		params.put("secret_key", secretKey);
+		} catch(JSONException je) {
+			throw new SaploClientException(ResponseCodes.CODE_JSON_EXCEPTION, je);
+		}
 		
 		JSONRPCRequestObject message = new JSONRPCRequestObject(client.getNextId(), "auth.accessToken", params);
 		JSONRPCResponseObject responseMessage = client.sendAndReceive(message);
@@ -46,7 +51,7 @@ public class SaploAuthManager {
 		return accessToken;
 	}
 	
-	public boolean invalidateToken() throws JSONException, SaploClientException {
+	public boolean invalidateToken() throws SaploClientException {
 		JSONArray params = new JSONArray();
 
 		client.sendAndReceive(new JSONRPCRequestObject(client.getNextId(), "auth.invalidateToken", params));

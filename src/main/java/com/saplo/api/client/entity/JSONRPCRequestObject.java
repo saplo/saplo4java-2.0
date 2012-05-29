@@ -18,7 +18,7 @@ public class JSONRPCRequestObject {
 	private Integer id;
 	private String method;
 	private Object params;
-	private String version = "2.0";
+	private final String version = "2.0";
 	
 	public JSONRPCRequestObject(Integer id) {
 		this.id = id;
@@ -127,9 +127,13 @@ public class JSONRPCRequestObject {
 	 *  
 	 * @param indent
 	 * @return 
-	 * @throws JSONException
 	 */
-	public String toString(int indent) throws JSONException {
-		return this.getJSONObject().toString(indent);
+	public String toString(int indent) {
+		try {
+			return this.getJSONObject().toString(indent);
+		} catch (JSONException e) {
+			e.printStackTrace();
+			return toString();
+		}
 	}
 }

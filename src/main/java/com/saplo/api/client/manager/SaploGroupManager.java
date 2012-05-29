@@ -3,17 +3,20 @@
  */
 package com.saplo.api.client.manager;
 
+import static com.saplo.api.client.ResponseCodes.CODE_CLIENT_FIELD;
+import static com.saplo.api.client.ResponseCodes.CODE_JSON_EXCEPTION;
+import static com.saplo.api.client.ResponseCodes.CODE_MALFORMED_RESPONSE;
+import static com.saplo.api.client.ResponseCodes.MSG_CLIENT_FIELD;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.saplo.api.client.ResponseCodes;
 import com.saplo.api.client.SaploClient;
 import com.saplo.api.client.SaploClientException;
 import com.saplo.api.client.entity.JSONRPCRequestObject;
@@ -35,7 +38,6 @@ public class SaploGroupManager {
 
 	private SaploClient client;
 	private ExecutorService es;
-	private static final int thread_count = 5;
 
 	/**
 	 * The default and only constructor.
@@ -44,7 +46,7 @@ public class SaploGroupManager {
 	 */
 	public SaploGroupManager(SaploClient clientToUse) {
 		this.client = clientToUse;
-		es = Executors.newFixedThreadPool(thread_count);
+		es = client.getAsyncExecutor();
 	}
 
 	/**
@@ -52,22 +54,23 @@ public class SaploGroupManager {
 	 * 
 	 * @param saploGroup - the new {@link SaploGroup} object to be created
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public void create(SaploGroup saploGroup) throws JSONException, SaploClientException {
-		if(ClientUtil.NULL_STRING.equals(saploGroup.getName()))
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "group.name");
+	public void create(SaploGroup saploGroup) throws SaploClientException {
+		verifyId(saploGroup);
+		
 		if(saploGroup.getLanguage() == null)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "group.language");
+			throw new SaploClientException(MSG_CLIENT_FIELD, CODE_CLIENT_FIELD, "group.language");
 
 		JSONObject params = new JSONObject();
-		params.put("name", saploGroup.getName());
-		if(!ClientUtil.NULL_STRING.equals(saploGroup.getDescription()))
-			params.put("description", saploGroup.getDescription());
-		params.put("language", saploGroup.getLanguage().toString());
+		try {
+			params.put("name", saploGroup.getName());
+			if(!ClientUtil.NULL_STRING.equals(saploGroup.getDescription()))
+				params.put("description", saploGroup.getDescription());
+			params.put("language", saploGroup.getLanguage().toString());
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "group.create", params);
 
@@ -120,11 +123,7 @@ public class SaploGroupManager {
 	public SaploFuture<Boolean> createAsync(final SaploGroup saploGroup) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					create(saploGroup);
-				} catch (JSONException e) {
-					return false;
-				}
+				create(saploGroup);
 				return true;
 			}
 		}));
@@ -135,20 +134,21 @@ public class SaploGroupManager {
 	 * 
 	 * @param saploGroup - the {@link SaploGroup} to update
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public void update(SaploGroup saploGroup) throws JSONException, SaploClientException {
-		if(saploGroup.getId() < 1)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "group.id");
+	public void update(SaploGroup saploGroup) throws SaploClientException {
+		verifyId(saploGroup);
 
 		JSONObject params = new JSONObject();
-		params.put("group_id", saploGroup.getId());
-		if(!ClientUtil.NULL_STRING.equals(saploGroup.getName()))
-			params.put("name", saploGroup.getName());
-		if(!ClientUtil.NULL_STRING.equals(saploGroup.getDescription()))
-			params.put("description", saploGroup.getDescription());
+		try {
+			params.put("group_id", saploGroup.getId());
+			if(!ClientUtil.NULL_STRING.equals(saploGroup.getName()))
+				params.put("name", saploGroup.getName());
+			if(!ClientUtil.NULL_STRING.equals(saploGroup.getDescription()))
+				params.put("description", saploGroup.getDescription());
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "group.update", params);
 
@@ -170,11 +170,7 @@ public class SaploGroupManager {
 	public SaploFuture<Boolean> updateAsync(final SaploGroup saploGroup) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					update(saploGroup);
-				} catch (JSONException e) {
-					return false;
-				}
+				update(saploGroup);
 				return true;
 			}
 		}));
@@ -185,16 +181,17 @@ public class SaploGroupManager {
 	 * WARNING: This will remove all texts linked to that group and remove all results for the group
 	 * 
 	 * @param saploGroup - the group to reset
-	 * @throws JSONException
 	 * @throws SaploClientException
 	 */
-	public void reset(SaploGroup saploGroup) throws JSONException, SaploClientException {
-		if(saploGroup.getId() < 1)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "group.id");
+	public void reset(SaploGroup saploGroup) throws SaploClientException {
+		verifyId(saploGroup);
 
 		JSONObject params = new JSONObject();
-		params.put("group_id", saploGroup.getId());
+		try {
+			params.put("group_id", saploGroup.getId());
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "group.reset", params);
 
@@ -216,11 +213,7 @@ public class SaploGroupManager {
 	public SaploFuture<Boolean> resetAsync(final SaploGroup saploGroup) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					reset(saploGroup);
-				} catch (JSONException e) {
-					return false;
-				}
+				reset(saploGroup);
 				return true;
 			}
 		}));
@@ -233,16 +226,17 @@ public class SaploGroupManager {
 	 * @param saploGroup - the group to delete
 	 * @return success/fail
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException
 	 */
-	public boolean delete(SaploGroup saploGroup) throws JSONException, SaploClientException {
-		if(saploGroup.getId() < 1)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "group.id");
+	public boolean delete(SaploGroup saploGroup) throws SaploClientException {
+		verifyId(saploGroup);
 
 		JSONObject params = new JSONObject();
-		params.put("group_id", saploGroup.getId());
+		try {
+			params.put("group_id", saploGroup.getId());
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "group.delete", params);
 
@@ -250,7 +244,7 @@ public class SaploGroupManager {
 
 		JSONObject result = (JSONObject)client.parseResponse(response);
 
-		return result.getBoolean("success");
+		return result.optBoolean("success", false);
 	}
 
 	/**
@@ -264,11 +258,7 @@ public class SaploGroupManager {
 	public SaploFuture<Boolean> deleteAsync(final SaploGroup saploGroup) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					return delete(saploGroup);
-				} catch (JSONException e) {
-					return false;
-				}
+				return delete(saploGroup);
 			}
 		}));
 	}
@@ -278,10 +268,9 @@ public class SaploGroupManager {
 	 * 
 	 * @return a {@link List} containing all the users {@link SaploGroup}s.
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public List<SaploGroup> list() throws JSONException, SaploClientException {
+	public List<SaploGroup> list() throws SaploClientException {
 		List<SaploGroup> groupList = new ArrayList<SaploGroup>();
 
 		JSONObject params = new JSONObject();
@@ -291,13 +280,16 @@ public class SaploGroupManager {
 
 		JSONObject rawJson = (JSONObject)client.parseResponse(response);
 
-		JSONArray groups = rawJson.getJSONArray("groups");
-		for(int i = 0; i < groups.length(); i++) {
-			JSONObject jsonGroup = groups.getJSONObject(i);
-			SaploGroup saploGroup = SaploGroup.convertFromJSONToGroup(jsonGroup);
-			groupList.add(saploGroup);
+		try {
+			JSONArray groups = rawJson.getJSONArray("groups");
+			for(int i = 0; i < groups.length(); i++) {
+				JSONObject jsonGroup = groups.getJSONObject(i);
+				SaploGroup saploGroup = SaploGroup.convertFromJSONToGroup(jsonGroup);
+				groupList.add(saploGroup);
+			}
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_MALFORMED_RESPONSE, je);
 		}
-
 		return groupList;
 	}
 
@@ -311,13 +303,7 @@ public class SaploGroupManager {
 	public SaploFuture<List<SaploGroup>> listAsync() {
 		return new SaploFuture<List<SaploGroup>>(es.submit(new Callable<List<SaploGroup>>() {
 			public List<SaploGroup> call() throws SaploClientException {
-				List<SaploGroup> groupList = null;
-				try {
-					groupList = list();
-				} catch (JSONException e) {
-					return null;
-				}
-				return groupList;
+				return list();
 			}
 		}));
 	}
@@ -329,18 +315,19 @@ public class SaploGroupManager {
 	 * @return textList - a {@link List} populated with {@link SaploText} objects 
 	 * (only {@link SaploCollection#getId()} and {@link SaploText#getId()} params)
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public List<SaploText> listTexts(SaploGroup saploGroup) throws JSONException, SaploClientException {
+	public List<SaploText> listTexts(SaploGroup saploGroup) throws SaploClientException {
 		List<SaploText> textList = new ArrayList<SaploText>();
 
-		if(saploGroup.getId() < 1)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "group.id");
-
+		verifyId(saploGroup);
+		
 		JSONObject params = new JSONObject();
-		params.put("group_id", saploGroup.getId());
+		try {
+			params.put("group_id", saploGroup.getId());
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "group.listTexts", params);
 
@@ -348,13 +335,17 @@ public class SaploGroupManager {
 
 		JSONObject rawJson = (JSONObject)client.parseResponse(response);
 
-		JSONArray texts = rawJson.getJSONArray("texts");
-		for(int i = 0; i < texts.length(); i++) {
-			JSONObject jsonText = texts.getJSONObject(i);
-			SaploText saploText = SaploText.convertFromJSONToText(jsonText);
-			textList.add(saploText);
+		try {
+			JSONArray texts = rawJson.getJSONArray("texts");
+			for(int i = 0; i < texts.length(); i++) {
+				JSONObject jsonText = texts.getJSONObject(i);
+				SaploText saploText = SaploText.convertFromJSONToText(jsonText);
+				textList.add(saploText);
+			}
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_MALFORMED_RESPONSE, je);
 		}
-
+		
 		return textList;
 	}
 
@@ -370,13 +361,7 @@ public class SaploGroupManager {
 	public SaploFuture<List<SaploText>> listTextsAsync(final SaploGroup saploGroup) {
 		return new SaploFuture<List<SaploText>>(es.submit(new Callable<List<SaploText>>() {
 			public List<SaploText> call() throws SaploClientException {
-				List<SaploText> textsList = null;
-				try {
-					textsList = listTexts(saploGroup);
-				} catch (JSONException e) {
-					return null;
-				}
-				return textsList;
+				return listTexts(saploGroup);
 			}
 		}));
 	}
@@ -388,24 +373,21 @@ public class SaploGroupManager {
 	 * @param saploText - the {@link SaploText} to add
 	 * @return true - on success
 	 * 
-	 * @throws JSONException on failure
 	 * @throws SaploClientException 
 	 */
-	public boolean addText(SaploGroup saploGroup, SaploText saploText) throws JSONException, SaploClientException {
-		if(saploGroup.getId() < 1)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "group.id");
-		if(saploText.getCollection() == null || saploText.getCollection().getId() <= 0)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.collection", "text.collection.id");
-		if(saploText.getId() <= 0)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.id");
+	public boolean addText(SaploGroup saploGroup, SaploText saploText) throws SaploClientException {
+		verifyId(saploGroup);
+		verifyCollection(saploText);
+		verifyId(saploText);
 
 		JSONObject params = new JSONObject();
-		params.put("group_id", saploGroup.getId());
-		params.put("collection_id", saploText.getCollection().getId());
-		params.put("text_id", saploText.getId());
+		try {
+			params.put("group_id", saploGroup.getId());
+			params.put("collection_id", saploText.getCollection().getId());
+			params.put("text_id", saploText.getId());
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "group.addText", params);
 
@@ -413,7 +395,7 @@ public class SaploGroupManager {
 
 		JSONObject result = (JSONObject)client.parseResponse(response);
 
-		return result.getBoolean("success");
+		return result.optBoolean("success", false);
 	}
 
 	/**
@@ -428,11 +410,7 @@ public class SaploGroupManager {
 	public SaploFuture<Boolean> addTextAsync(final SaploGroup saploGroup, final SaploText saploText) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					addText(saploGroup, saploText);
-				} catch (JSONException e) {
-					return false;
-				}
+				addText(saploGroup, saploText);
 				return true;
 			}
 		}));
@@ -445,24 +423,21 @@ public class SaploGroupManager {
 	 * @param saploText - the {@link SaploText} to delete
 	 * @return true - on success
 	 * 
-	 * @throws JSONException on failure
 	 * @throws SaploClientException 
 	 */
-	public boolean deleteText(SaploGroup saploGroup, SaploText saploText) throws JSONException, SaploClientException {
-		if(saploGroup.getId() < 1)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "group.id");
-		if(saploText.getCollection() == null || saploText.getCollection().getId() <= 0)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.collection", "text.collection.id");
-		if(saploText.getId() <= 0)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "text.id");
+	public boolean deleteText(SaploGroup saploGroup, SaploText saploText) throws SaploClientException {
+		verifyId(saploGroup);
+		verifyCollection(saploText);
+		verifyId(saploText);
 
 		JSONObject params = new JSONObject();
-		params.put("group_id", saploGroup.getId());
-		params.put("collection_id", saploText.getCollection().getId());
-		params.put("text_id", saploText.getId());
+		try {
+			params.put("group_id", saploGroup.getId());
+			params.put("collection_id", saploText.getCollection().getId());
+			params.put("text_id", saploText.getId());
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "group.deleteText", params);
 
@@ -483,11 +458,7 @@ public class SaploGroupManager {
 	public SaploFuture<Boolean> deleteTextAsync(final SaploGroup saploGroup, final SaploText saploText) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					deleteText(saploGroup, saploText);
-				} catch (JSONException e) {
-					return false;
-				}
+				deleteText(saploGroup, saploText);
 				return true;
 			}
 		}));
@@ -502,28 +473,28 @@ public class SaploGroupManager {
 	 * By default, all the user groups are searched.
 	 * @param wait - maximum time to wait for the result to be calculated.
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public void relatedGroups(SaploGroup saploGroup, SaploGroup[] groupScope, int wait) 
-	throws JSONException, SaploClientException {
-		if(saploGroup.getId() < 1)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "group.id");
-
+	public void relatedGroups(SaploGroup saploGroup, SaploGroup[] groupScope, int wait) throws SaploClientException {
+		verifyId(saploGroup);
+		
 		List<SaploGroup> relatedGroupsList = new ArrayList<SaploGroup>();
 
 		JSONObject params = new JSONObject();
-		params.put("group_id", saploGroup.getId());
-		if(groupScope != null && groupScope.length > 0) {
-			int groupIds[] = new int[groupScope.length];
-			for(int i = 0; i < groupScope.length; i++) {
-				groupIds[i] = groupScope[i].getId();
+		try {
+			params.put("group_id", saploGroup.getId());
+			if(groupScope != null && groupScope.length > 0) {
+				int groupIds[] = new int[groupScope.length];
+				for(int i = 0; i < groupScope.length; i++) {
+					groupIds[i] = groupScope[i].getId();
+				}
+				params.put("group_scope", groupIds);
 			}
-			params.put("group_scope", groupIds);
+			if(wait >= 0)
+				params.put("wait", wait);
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
 		}
-		if(wait >= 0)
-			params.put("wait", wait);
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "group.relatedGroups", params);
 
@@ -531,13 +502,18 @@ public class SaploGroupManager {
 
 		JSONObject rawResult = (JSONObject)client.parseResponse(response);
 
-		JSONArray groups = rawResult.getJSONArray("related_groups");
-		for(int i = 0; i < groups.length(); i++) {
-			JSONObject groupJson = groups.getJSONObject(i);
-			SaploGroup relGroup = SaploGroup.convertFromJSONToGroup(groupJson);
-			relGroup.setRelatedToGroup(saploGroup);
-			relatedGroupsList.add(relGroup);
+		try {
+			JSONArray groups = rawResult.getJSONArray("related_groups");
+			for(int i = 0; i < groups.length(); i++) {
+				JSONObject groupJson = groups.getJSONObject(i);
+				SaploGroup relGroup = SaploGroup.convertFromJSONToGroup(groupJson);
+				relGroup.setRelatedToGroup(saploGroup);
+				relatedGroupsList.add(relGroup);
+			}
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
 		}
+
 		saploGroup.setRelatedGroups(relatedGroupsList);
 	}
 
@@ -584,11 +560,7 @@ public class SaploGroupManager {
 	public SaploFuture<Boolean> relatedGroupsAsync(final SaploGroup saploGroup, final SaploGroup[] groupScope, final int wait) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					relatedGroups(saploGroup, groupScope, wait);
-				} catch (JSONException e) {
-					return false;
-				}
+				relatedGroups(saploGroup, groupScope, wait);
 				return true;
 			}
 		}));
@@ -604,25 +576,26 @@ public class SaploGroupManager {
 	 * @param limit - the maximum number of related texts in the result. 
 	 * @throws SaploClientException 
 	 */
-	public void relatedTexts(SaploGroup saploGroup, SaploCollection collection, int wait, int limit) throws JSONException, SaploClientException {
-		if(saploGroup.getId() < 1)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "group.id");
-
+	public void relatedTexts(SaploGroup saploGroup, SaploCollection collection, int wait, int limit) throws SaploClientException {
+		verifyId(saploGroup);
+		
 		List<SaploText> relatedTextsList = new ArrayList<SaploText>();
 
 		JSONObject params = new JSONObject();
-		params.put("group_id", saploGroup.getId());
-		if(collection != null) {
-			params.put("collection_scope", collection.getId());
-		} else {
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "collection_scope");
+		try {
+			params.put("group_id", saploGroup.getId());
+			if(collection != null) {
+				params.put("collection_scope", collection.getId());
+			} else {
+				throw new SaploClientException(MSG_CLIENT_FIELD, CODE_CLIENT_FIELD, "collection_scope");
+			}
+			if(wait >= 0)
+				params.put("wait", wait);
+			if(limit > 0)
+				params.put("limit", limit);
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
 		}
-		if(wait >= 0)
-			params.put("wait", wait);
-		if(limit > 0)
-			params.put("limit", limit);
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "group.relatedTexts", params);
 
@@ -630,13 +603,17 @@ public class SaploGroupManager {
 
 		JSONObject rawResult = (JSONObject)client.parseResponse(response);
 
-		JSONArray texts = rawResult.getJSONArray("related_texts");
+		try {
+			JSONArray texts = rawResult.getJSONArray("related_texts");
 
-		for(int i = 0; i < texts.length(); i++) {
-			JSONObject textJson = texts.getJSONObject(i);
-			SaploText relText = SaploText.convertFromJSONToText(textJson);
-			relText.setRelatedToGroup(saploGroup);
-			relatedTextsList.add(relText);
+			for(int i = 0; i < texts.length(); i++) {
+				JSONObject textJson = texts.getJSONObject(i);
+				SaploText relText = SaploText.convertFromJSONToText(textJson);
+				relText.setRelatedToGroup(saploGroup);
+				relatedTextsList.add(relText);
+			}
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
 		}
 
 		saploGroup.setRelatedTexts(relatedTextsList);
@@ -655,12 +632,11 @@ public class SaploGroupManager {
 	 * @throws SaploClientException 
 	 */
 	public void relatedTexts(SaploGroup saploGroup, SaploCollection[] collectionScope, int wait, int limit) 
-	throws JSONException, SaploClientException {
+	throws SaploClientException {
 		if(collectionScope.length > 0) {
 			relatedTexts(saploGroup, collectionScope[0], wait, limit);
 		} else {
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "collection_scope");
+			throw new SaploClientException(MSG_CLIENT_FIELD, CODE_CLIENT_FIELD, "collection_scope");
 		}
 	}
 	
@@ -678,13 +654,34 @@ public class SaploGroupManager {
 	public SaploFuture<Boolean> relatedTextsAsync(final SaploGroup saploGroup, final SaploCollection collection, final int wait, final int limit) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					relatedTexts(saploGroup, collection, wait, limit);
-				} catch (JSONException e) {
-					return false;
-				}
+				relatedTexts(saploGroup, collection, wait, limit);
 				return true;
 			}
 		}));
 	}
+
+	/*
+	 * ensure the given group has id
+	 */
+	private static void verifyId(SaploGroup saploGroup) throws SaploClientException {
+		if(saploGroup.getId() < 1)
+			throw new SaploClientException(MSG_CLIENT_FIELD, CODE_CLIENT_FIELD, "group.id");
+	}
+	
+	/*
+	 * ensure the given text has id
+	 */
+	private static void verifyId(SaploText saploText) throws SaploClientException {
+		if(saploText.getId() <= 0)
+			throw new SaploClientException(MSG_CLIENT_FIELD, CODE_CLIENT_FIELD, "text.id");
+	}
+
+	/*
+	 * ensure the given text has collection_id
+	 */
+	private static void verifyCollection(SaploText saploText) throws SaploClientException {
+		if(saploText.getCollection() == null || saploText.getCollection().getId() <= 0)
+			throw new SaploClientException(MSG_CLIENT_FIELD, CODE_CLIENT_FIELD, "text.collection", "text.collection.id");
+	}
+
 }

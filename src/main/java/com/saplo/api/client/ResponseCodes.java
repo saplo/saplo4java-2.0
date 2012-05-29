@@ -9,6 +9,9 @@ package com.saplo.api.client;
  */
 public class ResponseCodes {
 
+	/*
+	 * CLIENT SIDE ERROR CODES
+	 */
 	public static final int CODE_ERR_OTHER_EXCEPTION = 800;
 
 	public static final int CODE_UNKNOWN_EXCEPTION = 899;
@@ -22,9 +25,15 @@ public class ResponseCodes {
 
 	public static final int CODE_RECONNECTED = 896;
 	public static final String MSG_RECONNECTED = "Reconnected to the API, re-try your operation";
+	
+	public static final int CODE_MALFORMED_RESPONSE = 895;
+	public static final String MSG_MALFORMED_RESPONSE = "Received malformed response from the API";
+		
+	public static final int CODE_JSON_EXCEPTION = 894;
+	public static final String MSG_JSON_EXCEPTION = "JSONException";
 
 	/*
-	 * GENERAL RPC ERROR CODE
+	 * GENERAL RPC ERROR CODES
 	 */
 
 	public final static int CODE_ERR_NOSESSION = 595;

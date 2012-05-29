@@ -5,7 +5,8 @@ package com.saplo.api.client;
 
 import java.util.IllegalFormatException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author progre55
@@ -14,7 +15,7 @@ import org.apache.log4j.Logger;
 public class SaploClientException extends Exception {
 
 	private static final long serialVersionUID = -5262362627936830619L;
-	private static Logger logger = Logger.getLogger(SaploClientException.class);
+	private static Logger logger = LoggerFactory.getLogger(SaploClientException.class);
 	
 	protected int errorCode;
 	protected Throwable cause;
@@ -65,6 +66,17 @@ public class SaploClientException extends Exception {
 		this.errorCode = code;
 	}
 
+	/**
+	 * 
+	 * @param code - Client exception code
+	 * @param t - cause
+	 */
+	public SaploClientException(int code, Throwable t) {
+		super(t.getMessage());
+		this.cause = t;
+		this.errorCode = code;
+	}
+	
 	/**
 	 * @param t - API-Exception cause
 	 */

@@ -3,17 +3,17 @@
  */
 package com.saplo.api.client.manager;
 
+import static com.saplo.api.client.ResponseCodes.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.saplo.api.client.ResponseCodes;
 import com.saplo.api.client.SaploClient;
 import com.saplo.api.client.SaploClientException;
 import com.saplo.api.client.entity.JSONRPCRequestObject;
@@ -32,7 +32,6 @@ public class SaploCollectionManager {
 
 	private SaploClient client;
 	private ExecutorService es;
-	private static final int nThreads = 5;
 
 	/**
 	 * Constructor
@@ -41,7 +40,7 @@ public class SaploCollectionManager {
 	 */
 	public SaploCollectionManager(SaploClient clientToUse) {
 		this.client = clientToUse;
-		es = Executors.newFixedThreadPool(nThreads);
+		es = client.getAsyncExecutor();
 	}
 
 	/**
@@ -50,23 +49,24 @@ public class SaploCollectionManager {
 	 * 
 	 * @param saploCollection - the new {@link SaploCollection} object
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public void create(SaploCollection saploCollection) throws JSONException, SaploClientException {
+	public void create(SaploCollection saploCollection) throws SaploClientException {
 
 		if(ClientUtil.NULL_STRING.equals(saploCollection.getName()))
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "collection.name");
+			throw new SaploClientException(MSG_CLIENT_FIELD, CODE_CLIENT_FIELD, "collection.name");
 		if(null == saploCollection.getLanguage())
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "collection.language");
+			throw new SaploClientException(MSG_CLIENT_FIELD, CODE_CLIENT_FIELD, "collection.language");
 
 		JSONObject params = new JSONObject();
-		params.put("name", saploCollection.getName());
-		params.put("language", saploCollection.getLanguage().toString());
-		if(!ClientUtil.NULL_STRING.equals(saploCollection.getDescription()))
-			params.put("description", saploCollection.getDescription());
+		try {
+			params.put("name", saploCollection.getName());
+			params.put("language", saploCollection.getLanguage().toString());
+			if(!ClientUtil.NULL_STRING.equals(saploCollection.getDescription()))
+				params.put("description", saploCollection.getDescription());
+		} catch (JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "collection.create", params);
 
@@ -116,11 +116,7 @@ public class SaploCollectionManager {
 	public SaploFuture<Boolean> createAsync(final SaploCollection saploCollection) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					create(saploCollection);
-				} catch (JSONException e) {
-					return false;
-				}
+				create(saploCollection);
 				return true;
 			}
 		}));
@@ -131,17 +127,18 @@ public class SaploCollectionManager {
 	 * 
 	 * @param collection- the {@link SaploCollection} object with just an id.
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public void get(SaploCollection saploCollection) throws JSONException, SaploClientException {
+	public void get(SaploCollection saploCollection) throws SaploClientException {
 
-		if(saploCollection.getId() < 1)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "collection.id");
-
+		verifyId(saploCollection);
+		
 		JSONObject params = new JSONObject();
-		params.put("collection_id", saploCollection.getId());
+		try {
+			params.put("collection_id", saploCollection.getId());
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "collection.get", params);
 
@@ -163,11 +160,7 @@ public class SaploCollectionManager {
 	public SaploFuture<Boolean> getAsync(final SaploCollection saploCollection) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
 					get(saploCollection);
-				} catch (JSONException e) {
-					return false;
-				}
 				return true;
 			}
 		}));
@@ -179,10 +172,9 @@ public class SaploCollectionManager {
 	 * @param collectionId
 	 * @return saploCollection
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException
 	 */
-	public SaploCollection get(int collectionId) throws JSONException, SaploClientException {
+	public SaploCollection get(int collectionId) throws SaploClientException {
 		SaploCollection col = new SaploCollection();
 		col.setId(collectionId);
 		
@@ -196,21 +188,22 @@ public class SaploCollectionManager {
 	 * 
 	 * @param saploCollection - the {@link SaploCollection} object to update
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public void update(SaploCollection saploCollection) throws JSONException, SaploClientException {
+	public void update(SaploCollection saploCollection) throws SaploClientException {
 
-		if(saploCollection.getId() < 1)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "collection.id");
+		verifyId(saploCollection);
 
 		JSONObject params = new JSONObject();
+		try {
 		params.put("collection_id", saploCollection.getId());
 		if(!ClientUtil.NULL_STRING.equals(saploCollection.getName()))
 			params.put("name", saploCollection.getName());
 		if(!ClientUtil.NULL_STRING.equals(saploCollection.getDescription()))
 			params.put("description", saploCollection.getDescription());
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "collection.update", params);
 
@@ -232,11 +225,7 @@ public class SaploCollectionManager {
 	public SaploFuture<Boolean> updateAsync(final SaploCollection saploCollection) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					update(saploCollection);
-				} catch (JSONException e) {
-					return false;
-				}
+				update(saploCollection);
 				return true;
 			}
 		}));
@@ -247,17 +236,18 @@ public class SaploCollectionManager {
 	 * 
 	 * @param saploCollection - the {@link SaploCollection} object to be deleted
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public void delete(SaploCollection saploCollection) throws JSONException, SaploClientException {
+	public void delete(SaploCollection saploCollection) throws SaploClientException {
 
-		if(saploCollection.getId() < 1)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "collection.id");
+		verifyId(saploCollection);
 
 		JSONObject params = new JSONObject();
-		params.put("collection_id", saploCollection.getId());
+		try {
+			params.put("collection_id", saploCollection.getId());
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "collection.delete", params);
 
@@ -279,11 +269,7 @@ public class SaploCollectionManager {
 	public SaploFuture<Boolean> deleteAsync(final SaploCollection saploCollection) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					delete(saploCollection);
-				} catch (JSONException e) {
-					return false;
-				}
+				delete(saploCollection);
 				return true;
 			}
 		}));
@@ -295,10 +281,9 @@ public class SaploCollectionManager {
 	 * @param collectionId
 	 * @return saploCollection - the deleted SaploCollection
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException
 	 */
-	public SaploCollection delete(int collectionId) throws JSONException, SaploClientException {
+	public SaploCollection delete(int collectionId) throws SaploClientException {
 		SaploCollection col = new SaploCollection();
 		col.setId(collectionId);
 		
@@ -312,10 +297,9 @@ public class SaploCollectionManager {
 	 * 
 	 * @return collectionList - a {@link List} containing all the user {@link SaploCollection}s
 	 * 
-	 * @throws JSONException
 	 * @throws SaploClientException 
 	 */
-	public List<SaploCollection> list() throws JSONException, SaploClientException {
+	public List<SaploCollection> list() throws SaploClientException {
 		List<SaploCollection> colList = new ArrayList<SaploCollection>();
 		JSONObject params = new JSONObject();
 
@@ -325,14 +309,18 @@ public class SaploCollectionManager {
 
 		JSONObject rawListResult = (JSONObject)client.parseResponse(response);
 
-		JSONArray collections = rawListResult.getJSONArray("collections");
-		for(int i = 0; i < collections.length(); i++) {
-			JSONObject jsonColl = collections.getJSONObject(i);
+		try {
+			JSONArray collections = rawListResult.getJSONArray("collections");
+			for(int i = 0; i < collections.length(); i++) {
+				JSONObject jsonColl = collections.getJSONObject(i);
 
-			SaploCollection saploCollection = SaploCollection.convertFromJSONToCollection(jsonColl);
-			colList.add(saploCollection);
+				SaploCollection saploCollection = SaploCollection.convertFromJSONToCollection(jsonColl);
+				colList.add(saploCollection);
+			}
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_MALFORMED_RESPONSE, je);
 		}
-
+		
 		return colList;
 	}
 
@@ -347,11 +335,7 @@ public class SaploCollectionManager {
 		return new SaploFuture<List<SaploCollection>>(es.submit(new Callable<List<SaploCollection>>() {
 			public List<SaploCollection> call() throws SaploClientException {
 				List<SaploCollection> collectionList = null;
-				try {
-					collectionList = list();
-				} catch (JSONException e) {
-					return null;
-				}
+				collectionList = list();
 				return collectionList;
 			}
 		}));
@@ -363,16 +347,18 @@ public class SaploCollectionManager {
 	 * and all existing results. SaploText id counter in the collection will be reset.
 	 * 
 	 * @param saploCollection - the {@link SaploCollection} to be reset
-	 * @throws JSONException if failure
 	 * @throws SaploClientException 
 	 */
-	public void reset(SaploCollection saploCollection) throws JSONException, SaploClientException {
-		if(saploCollection.getId() < 1)
-			throw new SaploClientException(ResponseCodes.MSG_CLIENT_FIELD, 
-					ResponseCodes.CODE_CLIENT_FIELD, "collection.id");
-
+	public void reset(SaploCollection saploCollection) throws SaploClientException {
+		
+		verifyId(saploCollection);
+		
 		JSONObject params = new JSONObject();
-		params.put("collection_id", saploCollection.getId());
+		try {
+			params.put("collection_id", saploCollection.getId());
+		} catch(JSONException je) {
+			throw new SaploClientException(CODE_JSON_EXCEPTION, je);
+		}
 
 		JSONRPCRequestObject request = new JSONRPCRequestObject(client.getNextId(), "collection.reset", params);
 
@@ -394,13 +380,18 @@ public class SaploCollectionManager {
 	public SaploFuture<Boolean> resetAsync(final SaploCollection saploCollection) {
 		return new SaploFuture<Boolean>(es.submit(new Callable<Boolean>() {
 			public Boolean call() throws SaploClientException {
-				try {
-					reset(saploCollection);
-				} catch (JSONException e) {
-					return false;
-				}
+				reset(saploCollection);
 				return true;
 			}
 		}));
 	}
+	
+	/*
+	 * ensure the given text has id
+	 */
+	private static void verifyId(SaploCollection saploCollection) throws SaploClientException {
+		if(saploCollection.getId() < 1)
+			throw new SaploClientException(MSG_CLIENT_FIELD, CODE_CLIENT_FIELD, "collection.id");
+	}
+
 }
