@@ -84,7 +84,7 @@ public class HTTPSessionApache implements Session {
 		
 		// increase max total connection
 		cm.setMaxTotal(50);
-		cm.setDefaultMaxPerRoute(15);
+		cm.setDefaultMaxPerRoute(20);
 		// increase max connections for our endpoint
 		HttpHost saploHost = new HttpHost(endpoint.getHost(), (endpoint.getPort() > 0 ? endpoint.getPort() : 80));
 		cm.setMaxPerRoute(new HttpRoute(saploHost), 40);
