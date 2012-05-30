@@ -66,7 +66,6 @@ public class HTTPSessionApache implements Session {
 	public HTTPSessionApache(URI endpoint, String params) {
 		this.endpoint = endpoint;
 		this.params = params;
-		this.proxy = new HttpHost("localhost");
 		init();
 	}
 

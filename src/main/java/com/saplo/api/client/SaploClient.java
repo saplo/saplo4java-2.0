@@ -134,10 +134,10 @@ public class SaploClient implements Serializable {
 	private final Condition sleeping;
 
 	/**
-	 * Set a proxy address for the client to commumicate with the API
-	 * TODO set it before authing
-	 * @param host
-	 * @param port
+	 * Set a proxy for the client to communicate with the API
+	 * NOTE: set it before getting authed
+	 * 
+	 * @param proxy - a {@link ClientProxy} instance
 	 */
 	public void setProxy(ClientProxy proxy) {
 		session.setProxy(proxy);
@@ -160,7 +160,7 @@ public class SaploClient implements Serializable {
 	/*
 	 * FIXME fix, it's too complicated
 	 */
-	private synchronized boolean reCreateSession() throws SaploClientException {
+	private synchronized boolean reAuthenticateSession() throws SaploClientException {
 
 		lock.lock();
 		try  {
@@ -207,7 +207,7 @@ public class SaploClient implements Serializable {
 	}
 
 	/*
-	 * Get authed and save the access_token
+	 * Get authenticated and save the access_token
 	 */
 	private void authenticateSession() throws SaploClientException {
 		SaploAuthManager auth = new SaploAuthManager(this);
@@ -366,7 +366,7 @@ public class SaploClient implements Serializable {
 			throws SaploClientException {
 		if(error.getClientException().getErrorCode() == ResponseCodes.CODE_ERR_NOSESSION
 				|| error.getClientException().getErrorCode() == ResponseCodes.CODE_API_DOWN_EXCEPTION) {
-			boolean reconnected = reCreateSession();
+			boolean reconnected = reAuthenticateSession();
 			if(reconnected)
 				throw new SaploClientException(ResponseCodes.MSG_RECONNECTED, ResponseCodes.CODE_RECONNECTED);
 		}

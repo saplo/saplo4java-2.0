@@ -4,8 +4,9 @@
 package com.saplo.api.client;
 
 /**
+ * A class to hold "proxy" data to connect to the API
+ * 
  * @author progre55
- *
  */
 public class ClientProxy {
 	private String host;
@@ -14,12 +15,22 @@ public class ClientProxy {
 	private String password;
 	private boolean secure;
 	
+	/**
+	 * @param host
+	 * @param port
+	 */
 	public ClientProxy(String host, int port) {
 		this.host = host;
 		this.port = port;
 		this.secure = false;
 	}
 	
+	/**
+	 * @param host
+	 * @param port
+	 * @param username
+	 * @param password
+	 */
 	public ClientProxy(String host, int port, String username, String password) {
 		this.host = host;
 		this.port = port;
@@ -64,6 +75,8 @@ public class ClientProxy {
 	}
 
 	/**
+	 * When/if a username is set, proxy is assumed to be "secure"
+	 * 
 	 * @param username the username to set
 	 */
 	public void setUsername(String username) {
