@@ -3,6 +3,11 @@ Saplo4java
 
 This is an official Java client for the Saplo-API.
 
+<dl>
+ <dt>NOTE:</dt>
+ <dd>This client is deprecated! Use the [new version](https://github.com/saplo/saplo4j "saplo4j") instead!</dd>
+</dl>
+
 Quickstart
 ----------
 
