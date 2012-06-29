@@ -7,11 +7,11 @@ Quickstart
 ----------
 
     // Connect to the Saplo-API
-    SaploClient client = new SaploClient.Builder("API_KEY","SECRET_KEY").build();
+    SaploClient client = new SaploClient("API_KEY","SECRET_KEY");
 
     // Connect to the Saplo-API using a proxy
     ClientProxy proxy = new ClientProxy("host", 8080, "username", "password");
-    SaploClient client = new SaploClient.Builder("API_KEY","SECRET_KEY").proxy(proxy).build();
+    SaploClient client = new SaploClient("API_KEY","SECRET_KEY", proxy);
     
     // Create a manager to work with Collections
     SaploCollectionManager collectionMgr = new SaploCollectionManager(client);

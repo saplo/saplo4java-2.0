@@ -17,7 +17,11 @@ import com.saplo.api.client.entity.JSONRPCErrorObject;
 import com.saplo.api.client.entity.JSONRPCRequestObject;
 import com.saplo.api.client.entity.JSONRPCResponseObject;
 import com.saplo.api.client.entity.SaploFuture;
+import com.saplo.api.client.manager.SaploAccountManager;
 import com.saplo.api.client.manager.SaploAuthManager;
+import com.saplo.api.client.manager.SaploCollectionManager;
+import com.saplo.api.client.manager.SaploGroupManager;
+import com.saplo.api.client.manager.SaploTextManager;
 import com.saplo.api.client.session.Session;
 import com.saplo.api.client.session.TransportRegistry;
 import com.saplo.api.client.session.impl.HTTPSSession;
@@ -37,93 +41,178 @@ public class SaploClient implements Serializable {
 
 	private static Session session;
 
-	private boolean ssl;
-	private String endpoint;
-	private String apiKey;
-	private String secretKey;
+	private final boolean ssl;
+	private final String endpoint;
+	private final String apiKey;
+	private final String secretKey;
 	private String accessToken;
-	
+
 	// an ES for handling "async" methods
 	private ExecutorService es;
 
 	private static final String DEFAULT_ENDPOINT = "http://api.saplo.com/rpc/json";
 	private static final String DEFAULT_SSL_ENDPOINT = "https://api.saplo.com/rpc/json";
 
+
 	/**
-	 * A Builder class for SaploClient.
-	 * {@link #apiKey} and {@link #secretKey} are required, 
-	 * and the rest of the params are optional and will be set to default if not specified
-	 *  
-	 * @author progre55
+	 * A constructor that uses a default endpoint - {@value SaploClient#DEFAULT_ENDPOINT}
+	 * and not SSL secure
+	 *
+	 * @param apiKey - your API-KEY
+	 * @param secretKey - your SECRET-KEY
+	 *
+	 * @throws HttpException
+	 * @throws IOException
+	 * @throws JSONException
+	 * @throws SaploClientException
 	 */
-	public static class Builder {
-		// required params
-		private final String apiKey;
-		private final String secretKey;
-		
-		// optional params
-		private boolean ssl = false;
-		private String endpoint = DEFAULT_ENDPOINT;
-		private String accessToken = "";
-		private ClientProxy proxy = null;
-		
-		public Builder(String apiKey, String secretKey) {
-			this.apiKey = apiKey;
-			this.secretKey = secretKey;
-		}
-		
-		public Builder endpoint(String endpoint)
-		{ this.endpoint = endpoint;	
-		if(this.endpoint.startsWith("https://"))
-			this.ssl = true;
-		return this; }
-		
-		public Builder ssl(boolean ssl)
-		{ this.ssl = ssl;
-		if(this.ssl && this.endpoint.equals(DEFAULT_ENDPOINT))
-			this.endpoint = DEFAULT_SSL_ENDPOINT;
-		return this; }
-		
-		public Builder accessToken(String accessToken)
-		{ this.accessToken = accessToken;	return this; }
-		
-		public Builder proxy(ClientProxy proxy)
-		{ this.proxy = proxy;	return this; }
-		
-		/**
-		 * Build a SaploClient with the specified params
-		 * 
-		 * @return SaploClient
-		 * @throws SaploClientException
-		 */
-		public SaploClient build() throws SaploClientException {
-			if(this.endpoint == null || !this.endpoint.startsWith("http"))
-				throw new SaploClientException(String.format("Invalid endpoint \"%s\"!", this.endpoint));
-			if(this.ssl && !this.endpoint.startsWith("https://"))
-				throw new SaploClientException("Invalid SSL endpoint! An SSL URL should start with https://");
-			if(!this.ssl && !this.endpoint.startsWith("http://"))
-				throw new SaploClientException("Invalid endpoint! Should start with http://");
-			
-			return new SaploClient(this);
-		}
+	public SaploClient(String apiKey, String secretKey) throws SaploClientException {
+		this(apiKey, secretKey, DEFAULT_ENDPOINT);
 	}
-	
-	private SaploClient(Builder builder) throws SaploClientException {
-		apiKey = builder.apiKey;
-		secretKey = builder.secretKey;
-		ssl = builder.ssl;
-		apiKey = builder.apiKey;
-		secretKey = builder.secretKey;
-		endpoint = builder.endpoint;
-		
+
+	public SaploClient(String apiKey, String secretKey, ClientProxy proxy) throws SaploClientException {
+		this(apiKey, secretKey, "", DEFAULT_ENDPOINT, false, proxy);
+	}
+
+	/**
+	 * A constructor to use the default endpoint
+	 *
+	 * @param apiKey - your API-KEY
+	 * @param secretKey - your SECRET-KEY
+	 * @param ssl - should use SSL?
+	 *
+	 * @throws HttpException
+	 * @throws IOException
+	 * @throws JSONException
+	 * @throws SaploClientException
+	 */
+	public SaploClient(String apiKey, String secretKey, boolean ssl) throws SaploClientException {
+		this(apiKey, secretKey, "", ssl ? DEFAULT_SSL_ENDPOINT : DEFAULT_ENDPOINT, ssl, null);
+	}
+
+	/**
+	 * A Constructor with a custom endpoint and non SSL secure <br>
+	 * NOTE: It is recommended to use {@link #SaploClient(String, String)}
+	 *
+	 * @param apiKey - your API-KEY
+	 * @param secretKey - your SECRET-KEY
+	 * @param endpoint - the endpoint URL for the client to connect to
+	 *
+	 * @throws HttpException
+	 * @throws IOException
+	 * @throws JSONException
+	 * @throws SaploClientException
+	 */
+	public SaploClient(String apiKey, String secretKey, String endpoint) throws SaploClientException {
+		this(apiKey, secretKey, "", endpoint, false, null);
+	}
+
+	/**
+	 * Another constructor
+	 *
+	 * @param apiKey - your API-KEY
+	 * @param secretKey - your SECRET-KEY
+	 * @param endpoint - the endpoint URL for the client to connect to
+	 * @param ssl - should use SSL?
+	 *
+	 * @throws HttpException
+	 * @throws IOException
+	 * @throws JSONException
+	 * @throws SaploClientException
+	 */
+	public SaploClient(String apiKey, String secretKey, String endpoint, boolean ssl) throws SaploClientException {
+		this(apiKey, secretKey, "", endpoint, ssl);
+	}
+
+	/**
+	 * If you have a valid accessToken, use this constructor
+	 *
+	 * @param apiKey - your API-KEY
+	 * @param secretKey - your SECRET-KEY
+	 * @param accessToken - a valid accessToken
+	 * @param endpoint - the endpoint URL for the client to connect to
+	 * @param ssl - should use SSL?
+	 *
+	 * @throws HttpException
+	 * @throws IOException
+	 * @throws JSONException
+	 * @throws SaploClientException
+	 */
+	public SaploClient(String apiKey, String secretKey, String accessToken,
+			String endpoint, boolean ssl) throws SaploClientException {
+		this(apiKey, secretKey, "", endpoint, ssl, null);
+	}
+
+	/**
+	 * If you have a valid accessToken, use this constructor
+	 *
+	 * @param apiKey - your API-KEY
+	 * @param secretKey - your SECRET-KEY
+	 * @param accessToken - a valid accessToken
+	 * @param endpoint - the endpoint URL for the client to connect to
+	 * @param ssl - should use SSL?
+	 * @param proxy - should this transport use proxy
+	 *
+	 * @throws HttpException
+	 * @throws IOException
+	 * @throws JSONException
+	 * @throws SaploClientException
+	 */
+	public SaploClient(String apiKey, String secretKey, String accessToken, String endpoint, 
+			boolean ssl, ClientProxy proxy) throws SaploClientException {
+
+		if(endpoint == null || !endpoint.startsWith("http"))
+			throw new SaploClientException("Invalid endpoint!");
+		if(ssl && !endpoint.startsWith("https://"))
+			throw new SaploClientException("Invalid SSL endpoint! An SSL URL should start with https://");
+		if(!ssl && !endpoint.startsWith("http://"))
+			throw new SaploClientException("Invalid endpoint! Should start with http://");
+
+		this.apiKey = apiKey;
+		this.secretKey = secretKey;
+		this.ssl = ssl;
+		this.endpoint = endpoint;
+
 		es = Executors.newFixedThreadPool(20);
-		
+
 		this.setupServerEnvironment();
-		createSession(builder.accessToken, builder.proxy);
+		createSession(accessToken, proxy);
 		lock = new ReentrantLock();
 		sleeping = lock.newCondition();
+
+		// create the managers
+		collectionMgr = new SaploCollectionManager(this);
+		textMgr = new SaploTextManager(this);
+		groupMgr = new SaploGroupManager(this);
+		authMgr = new SaploAuthManager(this);
+		accountMgr = new SaploAccountManager(this);
 	}
-	
+
+	private final SaploCollectionManager collectionMgr;
+	public SaploCollectionManager getCollectionManager() {
+		return collectionMgr;
+	}
+
+	private final SaploTextManager textMgr;
+	public SaploTextManager getTextManager() {
+		return textMgr;
+	}
+
+	private final SaploGroupManager groupMgr;
+	public SaploGroupManager getGroupManager() {
+		return groupMgr;
+	}
+
+	private final SaploAuthManager authMgr;
+	public SaploAuthManager getAuthManager() {
+		return authMgr;
+	}
+
+	private final SaploAccountManager accountMgr;
+	public SaploAccountManager getAccountManager() {
+		return accountMgr;
+	}
+
 	private long lastReconnectAttempt = 0;
 	private long lastSuccessfulReconnect = 0;
 	private final long reconnectTimeout = 3 * 1000; // 3 seconds
@@ -250,15 +339,15 @@ public class SaploClient implements Serializable {
 	 */
 	public boolean isUp() throws SaploClientException {
 
-			JSONArray params = new JSONArray();
-			params.put("ping");
+		JSONArray params = new JSONArray();
+		params.put("ping");
 
-			JSONRPCRequestObject req = new JSONRPCRequestObject(1, "ping.ping", params);
+		JSONRPCRequestObject req = new JSONRPCRequestObject(1, "ping.ping", params);
 
-			JSONRPCResponseObject json = sendAndReceive(req);
-			String result = (String) parseResponse(json);
+		JSONRPCResponseObject json = sendAndReceive(req);
+		String result = (String) parseResponse(json);
 
-			return "pong".equals(result);
+		return "pong".equals(result);
 
 	}
 
@@ -283,7 +372,7 @@ public class SaploClient implements Serializable {
 			HTTPSessionApache.deregister(TransportRegistry.getTransportRegistryInstance());
 
 		es.shutdownNow();
-		
+
 		return true;
 	}
 
@@ -312,7 +401,7 @@ public class SaploClient implements Serializable {
 		logger.debug("<<<<<<Got response: " + response);
 		return response;
 	}
-	
+
 	/**
 	 * An Async version of {@link #sendAndReceive(JSONRPCRequestObject)}
 	 * 
@@ -326,7 +415,7 @@ public class SaploClient implements Serializable {
 			}
 		}));
 	}
-	
+
 	/**
 	 * Get the executor service to execute async tasks by managers
 	 * 
