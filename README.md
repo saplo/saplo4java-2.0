@@ -1,7 +1,7 @@
 Saplo4java
 =======
 
-_NOTE: This client is deprecated! Use the [new saplo4j client](/saplo/saplo4j "saplo4j") instead!_
+_NOTE: This client is deprecated! Use the [new saplo4j client](https://github.com/saplo/saplo4j "saplo4j") instead!_
 
 This is an official Java client for the Saplo-API.
 
